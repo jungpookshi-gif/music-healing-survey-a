@@ -384,6 +384,13 @@ export const text = {
     "当前浏览器无法打开 KakaoTalk 分享。请在 Chrome 或 Safari 中打开此页，并在分享菜单中选择 KakaoTalk（如可用）。",
     "Энэ хөтчөөс KakaoTalk-аар хуваалцах боломжгүй байна. Хуудсыг Chrome эсвэл Safari-д нээгээд хуваалцах цэсэнд KakaoTalk байвал сонгоно уу."
   ],
+  "shareAppsUnavailable": [
+    "Menu chia sẻ của thiết bị không mở được. Bạn có thể chọn một ứng dụng ở trên.",
+    "기기의 공유 메뉴를 열 수 없습니다. 위 목록에서 공유할 앱을 선택할 수 있습니다.",
+    "The device share menu could not open. Choose an app from the list above.",
+    "无法打开设备的分享菜单。请从上方列表选择应用。",
+    "Төхөөрөмжийн хуваалцах цэс нээгдсэнгүй. Дээрх жагсаалтаас апп сонгоно уу."
+  ],
   "shareKakaoChoose": [
     "Chọn KakaoTalk trong menu chia sẻ.",
     "기기의 공유 메뉴에서 KakaoTalk을 선택하세요.",

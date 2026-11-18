@@ -40,6 +40,9 @@ export function connectSurveyShare(section, url, t, {device = navigator, kakao =
   const facebook = new URL('https://www.facebook.com/sharer/sharer.php');
   facebook.searchParams.set('u', url);
   section.querySelector('#share-facebook').href = facebook.href;
+  const message = encodeURIComponent(url);
+  section.querySelector('#share-whatsapp').href = 'https://wa.me/?text=' + message;
+  section.querySelector('#share-line').href = 'https://line.me/R/share?text=' + message;
   system.hidden = !supportsNative;
 
   function showPlatforms() {
@@ -51,9 +54,8 @@ export function connectSurveyShare(section, url, t, {device = navigator, kakao =
     status.textContent = '';
     try {
       await device.share({url});
-    } catch {
-      // Missing targets and restricted in-app browsers can both reject the picker.
-      showPlatforms();
+    } catch (error) {
+      if (error?.name !== 'AbortError') status.textContent = t('shareAppsUnavailable');
     }
   }
 
@@ -79,8 +81,5 @@ export function connectSurveyShare(section, url, t, {device = navigator, kakao =
   };
 
   system.onclick = shareWithDevice;
-  share.onclick = () => {
-    if (supportsNative && !kakaoShare) return shareWithDevice();
-    showPlatforms();
-  };
+  share.onclick = showPlatforms;
 }

@@ -19,22 +19,26 @@ function shareControls() {
   const nodes = {
     '#share-survey': {setAttribute(name,value){this[name]=value;}},
     '#share-platforms': {hidden:true}, '#share-other-apps': {hidden:true},
-    '#share-kakao': {}, '#share-facebook': {}, '#share-status': {}
+    '#share-kakao': {}, '#share-facebook': {}, '#share-whatsapp': {}, '#share-line': {}, '#share-status': {}
   };
   return {nodes, section:{querySelector:selector=>nodes[selector]}};
 }
 
-test('the survey button gives the system share action only the public URL', async () => {
+test('the share button presents platforms and the system picker receives only the public URL', async () => {
   const {nodes,section}=shareControls();
   const url='https://example.test/survey/?lang=vi';
   let shared;
   connectSurveyShare(section,url,key=>key,{device:{share:async data=>{shared=data;}}});
-  await nodes['#share-survey'].onclick();
-  assert.deepEqual(shared,{url});
   assert.equal(nodes['#share-platforms'].hidden,true);
+  await nodes['#share-survey'].onclick();
+  assert.equal(nodes['#share-platforms'].hidden,false);
+  assert.equal(shared,undefined);
+  assert.equal(nodes['#share-other-apps'].hidden,false);
+  await nodes['#share-other-apps'].onclick();
+  assert.deepEqual(shared,{url});
 });
 
-test('unsupported or rejected native share opens platform actions without copying', async () => {
+test('chat platform links work even when a device share picker is unavailable', async () => {
   const url='https://example.test/survey/?lang=ko';
   const clipboard={writeText(){assert.fail('Sharing must never copy');}};
   for (const device of [
@@ -51,6 +55,12 @@ test('unsupported or rejected native share opens platform actions without copyin
     const facebook=new URL(nodes['#share-facebook'].href);
     assert.equal(facebook.origin+facebook.pathname,'https://www.facebook.com/sharer/sharer.php');
     assert.equal(facebook.searchParams.get('u'),url);
+    const whatsapp=new URL(nodes['#share-whatsapp'].href);
+    assert.equal(whatsapp.origin,'https://wa.me');
+    assert.equal(whatsapp.searchParams.get('text'),url);
+    const line=new URL(nodes['#share-line'].href);
+    assert.equal(line.origin+line.pathname,'https://line.me/R/share');
+    assert.equal(line.searchParams.get('text'),url);
   }
 });
 
