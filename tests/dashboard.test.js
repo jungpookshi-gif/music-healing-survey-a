@@ -149,9 +149,11 @@ test('administrator dashboard requires a successful server password check and lo
    if(!elements.has(id)) elements.set(id,makeElement());
    return elements.get(id);
  };
+ const languageButtons=['vi','ko','en','zh','mn'].map(lang=>({...makeElement('button'),dataset:{lang}}));
  const environment = {
-   document:{documentElement:{},getElementById:element,createElement:makeElement,createElementNS:(_ns,tag)=>makeElement(tag),querySelectorAll:()=>[]},
-   location:{href:'https://example.test/admin/?lang=en'},
+   document:{documentElement:{},getElementById:element,createElement:makeElement,createElementNS:(_ns,tag)=>makeElement(tag),querySelectorAll:()=>languageButtons},
+   location:{href:'https://example.test/admin/'},
+   history:{replaceState(_state,_title,url){environment.location.href=url.href;}},
    window:{SURVEY_CONFIG:{endpoint:'https://script.google.com/macros/s/fixture/exec'},addEventListener(){}},
    fetch:async (_url,{body}) => {
      assert.equal(body.get('action'),'summary');
@@ -167,6 +169,10 @@ test('administrator dashboard requires a successful server password check and lo
    t.after(()=>original?Object.defineProperty(globalThis,key,original):delete globalThis[key]);
  }
  await import('../admin/dashboard.js');
+ assert.equal(document.documentElement.lang,'ko');
+ assert.equal(element('sign-in-title').textContent,'관리자 로그인');
+ assert.equal(languageButtons[1].attributes['aria-pressed'],'true');
+ languageButtons[2].onclick();
  assert.equal(element('dashboard').hidden,true);
  assert.equal(element('dashboard').inert,true);
  assert.equal(element('kpis').children.length,0);
@@ -222,6 +228,23 @@ test('administrator dashboard requires a successful server password check and lo
  assert.doesNotMatch(finding(charts.children[3]),/8 out of 10/);
  const frequencyMarks=plotCard(charts.children[3]).children[0].children.flatMap(row=>row.children).filter(node=>node.attributes.class==='dot-mark sparse-dot');
  assert.equal(frequencyMarks.length,1);
+ languageButtons[1].onclick();
+ assert.equal(location.href,'https://example.test/admin/?lang=ko');
+ assert.equal(charts.children[4].children[0].textContent,'음악 청취 시간 × 스트레스 점수');
+ for(const card of charts.children) {
+   const report=card.children.find(child=>child.className==='chart-report');
+   assert.equal(report.children[0].textContent,'상세 분석 읽기');
+   assert.equal(report.children[1].attributes.lang,'ko');
+   const copy=report.children[1].children.map(p=>p.textContent).join(' ');
+   assert.ok((copy.match(/\p{Script=Hangul}+/gu) ?? []).length>=300,card.children[0].textContent);
+ }
+ languageButtons[0].onclick();
+ assert.equal(charts.children[4].children[0].textContent,'Thời gian nghe nhạc × điểm căng thẳng');
+ assert.equal(charts.children[4].children.find(child=>child.className==='chart-report').children[1].attributes.lang,'vi');
+ languageButtons[4].onclick();
+ assert.equal(document.documentElement.lang,'mn');
+ assert.equal(element('charts-title').textContent,'Шинжилгээний диаграммууд');
+ assert.equal(charts.children.length,6);
  assert.equal(element('key').value,'');
  element('sign-out').onclick();
  assert.equal(element('dashboard').hidden,true);

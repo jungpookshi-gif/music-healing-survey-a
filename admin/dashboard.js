@@ -1,11 +1,11 @@
 import {fields} from '../schema.js?v=4';
+import {initialLanguage, languages} from '../locale.js';
 import {ageBands,fromCsv,mean,barsFor} from './analysis.js?v=6';
-import {words,shortNames} from './labels.js?v=9';
-import {renderCharts} from './charts.js?v=3';
+import {words,shortNames} from './labels.js?v=10';
+import {renderCharts} from './charts.js?v=4';
 
-const languages=['vi','ko','en','zh'];
 const query=new URL(location.href);
-let lang=languages.includes(query.searchParams.get('lang'))?query.searchParams.get('lang'):'vi';
+let lang=initialLanguage(query.href);
 let onlineSummary=null, summary=null, source='', excluded=0, status='', sequence=0;
 const configured=window.SURVEY_CONFIG?.endpoint || '';
 const endpoint=/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(configured)?configured:'';
@@ -53,7 +53,7 @@ function renderTable(langIndex) {
   });
 }
 function render() {
-  document.documentElement.lang=lang;
+  document.documentElement.lang=lang==='zh'?'zh-Hans':lang;
   document.title=t('workspace')+' · Survey A';
   const signedIn = onlineSummary !== null;
   el('login-panel').hidden=signedIn;
@@ -96,7 +96,7 @@ function render() {
   const young=validAges.reduce((sum,[age,n])=>Number(age)<=34 ? sum+n : sum,0);
   el('study-scope').textContent=ageTotal
     ? `${t('studyScope')} ${t('ageProfile',{young:number(young),total:number(ageTotal),share:number(young/ageTotal*100,1)})}` : t('studyScope');
-  renderCharts(el('charts'),summary,{langIndex,number,t});
+  renderCharts(el('charts'),summary,{langIndex,reportLang:lang==='ko'?'ko':'vi',number,t});
   renderTable(langIndex);
 }
 function setOnlineView() {

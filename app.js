@@ -3,8 +3,8 @@ import {text} from './i18n.js?v=15';
 import {validAnswer, makePayload, noStressListening, detailLimits, ageRange} from './logic.js?v=5';
 import {createPlayer} from './music.js?v=3';
 import {connectSurveyShare, loadKakaoShare, surveyInviteUrl, surveyShareSection} from './sharing.js?v=15';
+import {initialLanguage, languages} from './locale.js';
 
-const languages = ['vi', 'ko', 'en', 'zh', 'mn'];
 const draftKey = 'mhs-a-v2';
 const finalStep = fields.length;
 const doneStep = finalStep + 1;
@@ -17,8 +17,7 @@ const art = document.querySelector('.art');
 const motion = document.querySelector('#motion');
 const player = createPlayer(document.querySelector('#music-player'), key => t(key));
 
-let lang = new URL(location.href).searchParams.get('lang');
-if (!languages.includes(lang)) lang = 'vi';
+let lang = initialLanguage(location.href);
 let step = -1;
 let answers = {};
 let details = {};

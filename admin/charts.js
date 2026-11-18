@@ -2,8 +2,8 @@ import {fields, options} from '../schema.js?v=4';
 import {ageBands, barsFor} from './analysis.js?v=6';
 import {canvas, svg, text} from './plot.js?v=1';
 import {distributionStats, smallGroupSize} from './relationship-analysis.js?v=2';
-import {frequencyReport, genreReport, minutesReport, scoreReport} from './chart-interpretation.js?v=2';
-import {relationshipCards} from './relationship-charts.js?v=2';
+import {frequencyReport, genreReport, minutesReport, scoreReport} from './chart-interpretation.js?v=3';
+import {relationshipCards} from './relationship-charts.js?v=3';
 
 function countAxis(values) {
   const peak = Math.max(1, ...values);
@@ -115,7 +115,7 @@ function mostFrequent(rows, total, number, t) {
   });
 }
 
-function addCard(target, {title, scale, n, plot, controls, detail, insight, report, wide}, t, total, number) {
+function addCard(target, {title, scale, n, plot, controls, detail, insight, report, wide}, t, total, number, reportLang) {
   const card = document.createElement('article');
   card.className = wide ? 'card chart-card chart-wide' : 'card chart-card';
   const heading = document.createElement('h3');
@@ -149,7 +149,7 @@ function addCard(target, {title, scale, n, plot, controls, detail, insight, repo
     const heading = document.createElement('summary');
     heading.textContent = t('detailedReport');
     const body = document.createElement('div');
-    body.setAttribute('lang', 'vi');
+    body.setAttribute('lang', reportLang);
     for (const paragraph of report) {
       const element = document.createElement('p');
       element.textContent = paragraph;
@@ -161,11 +161,13 @@ function addCard(target, {title, scale, n, plot, controls, detail, insight, repo
   target.append(card);
 }
 
-export function renderCharts(target, summary, {langIndex, number, t}) {
+export function renderCharts(target, summary, {langIndex, reportLang, number, t}) {
   target.replaceChildren();
-  const add = card => addCard(target, card, t, summary.total, number);
+  const add = card => addCard(target, card, t, summary.total, number, reportLang);
+  const reportIndex = reportLang === 'ko' ? 2 : 1;
+  const reportRows = rows => rows.map(row => ({...row, label: row.reportLabel}));
   const genre = options.genre.filter(([key]) => key !== 'none').map(option => ({
-    key: option[0], label: option[langIndex + 1], vi: option[1], value: summary.counts.stress_genre[option[0]] || 0
+    key: option[0], label: option[langIndex + 1], reportLabel: option[reportIndex], value: summary.counts.stress_genre[option[0]] || 0
   }));
   if (summary.ageGenre) {
     const rows = ageBands.map(([low, high], index) => {
@@ -187,7 +189,7 @@ export function renderCharts(target, summary, {langIndex, number, t}) {
       insight = leads.length ? leads.join(' ') : t('ageGenreSmallOnly', {minimum: smallGroupSize});
     }
     add({title, scale, n: total, plot: total ? heatmapPlot(rows, genre, title, scale, number, t) : null, insight,
-      report: total ? genreReport(genre.map(g => ({label: g.vi, value: g.value})), rows, summary.total) : null, wide: true});
+      report: total ? genreReport(reportRows(genre), rows, summary.total, reportLang) : null, wide: true});
   } else {
     const title = t('genreChart'), scale = t('genreScale');
     const total = sum(genre);
@@ -195,7 +197,7 @@ export function renderCharts(target, summary, {langIndex, number, t}) {
     const insight = total ? mostFrequent(rows, total, number, t) : t('empty');
     add({title, scale, n: total, plot: total ? horizontalPlot(rows, countAxis(rows.map(row => row.value)), title, scale, number) : null,
       insight: `${insight} ${t('heatmapCsv')}`,
-      report: total ? genreReport(genre.map(g => ({label: g.vi, value: g.value})), null, summary.total) : null, wide: true});
+      report: total ? genreReport(reportRows(genre), null, summary.total, reportLang) : null, wide: true});
   }
 
   const minutesTitle = t('minutesChart'), minutesScale = t('minutesScale');
@@ -206,7 +208,7 @@ export function renderCharts(target, summary, {langIndex, number, t}) {
   add({title: minutesTitle, scale: minutesScale, n: minutesTotal,
     plot: minutesTotal ? horizontalPlot(minutesPlot, countAxis(minutes.map(row => row.value)), minutesTitle, minutesScale, number) : null,
     insight: minutesStats ? `${mostFrequent(minutes, minutesTotal, number, t)} ${t('minutesInsight', {median: number(minutesStats.median, 1), mean: number(minutesStats.mean, 1)})}` : t('empty'),
-    report: minutesStats ? minutesReport(minutes, minutesStats, summary.total) : null});
+    report: minutesStats ? minutesReport(minutes, minutesStats, summary.total, reportLang) : null});
 
   const scoreTitle = t('scoreChart'), scoreScale = t('scoreScale');
   const scores = barsFor(fields.find(field => field.key === 'stress_week'), summary.counts.stress_week, langIndex);
@@ -214,14 +216,14 @@ export function renderCharts(target, summary, {langIndex, number, t}) {
   const scoreStats = scoreTotal ? distributionStats(summary.counts.stress_week) : null;
   add({title: scoreTitle, scale: scoreScale, n: scoreTotal, plot: scoreTotal ? scorePlot(scores, scoreTitle, scoreScale, number) : null,
     insight: scoreStats ? t('scoreInsight', {median: number(scoreStats.median, 1), mean: number(scoreStats.mean, 1), high: number(high), total: number(scoreTotal), share: number(high / scoreTotal * 100, 1)}) : t('empty'),
-    report: scoreStats ? scoreReport(scores, scoreStats, high, summary.total) : null});
+    report: scoreStats ? scoreReport(scores, scoreStats, high, summary.total, reportLang) : null});
 
   const frequencyTitle = t('compare'), frequencyScale = `${t('frequencyScale')} ${t('frequencySparse', {minimum: smallGroupSize})}`;
   const frequency = options.stress_frequency.filter(([key]) => key !== 'no_stress').flatMap(option => {
     const group = summary.stressByFrequency[option[0]];
     if (!group?.n) return [];
     const value = group.sum / group.n;
-    return [{label: option[langIndex + 1], vi: option[1], n: group.n, value, sparse: group.n < smallGroupSize, caption: `${number(value, 1)} · n=${number(group.n)}`}];
+    return [{label: option[langIndex + 1], reportLabel: option[reportIndex], n: group.n, value, sparse: group.n < smallGroupSize, caption: `${number(value, 1)} · n=${number(group.n)}`}];
   });
   const frequencyValues = frequency.filter(row => !row.sparse).map(row => row.value);
   const frequencyInsight = frequencyValues.length > 1 ? t('frequencySpread', {minimum: smallGroupSize, low: number(Math.min(...frequencyValues), 1), high: number(Math.max(...frequencyValues), 1)})
@@ -229,6 +231,6 @@ export function renderCharts(target, summary, {langIndex, number, t}) {
   add({title: frequencyTitle, scale: frequencyScale, n: frequency.reduce((n, row) => n + row.n, 0), wide: true,
     plot: frequency.length ? horizontalPlot(frequency, [0,2,4,6,8,10], frequencyTitle, frequencyScale, number, true) : null,
     insight: frequency.length ? `${frequencyInsight} ${t('noCausality')}` : frequencyInsight,
-    report: frequency.length ? frequencyReport(frequency.map(row => ({...row, label: row.vi})), summary.total, smallGroupSize) : null});
-  relationshipCards(summary, {langIndex, number, t}).forEach(add);
+    report: frequency.length ? frequencyReport(reportRows(frequency), summary.total, smallGroupSize, reportLang) : null});
+  relationshipCards(summary, {langIndex, reportLang, number, t}).forEach(add);
 }

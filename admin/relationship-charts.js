@@ -1,7 +1,7 @@
 import {options} from '../schema.js?v=4';
 import {canvas, svg, text} from './plot.js?v=1';
 import {distributionStats, durationSensitivity, scatterStats, smallGroupSize} from './relationship-analysis.js?v=2';
-import {boxReport, scatterReport} from './chart-interpretation.js?v=2';
+import {boxReport, scatterReport} from './chart-interpretation.js?v=3';
 
 const scoreTicks = [0, 2, 4, 6, 8, 10];
 
@@ -147,7 +147,7 @@ function boxPlot(groups, title, scale, number, t) {
   return {plot, ...inspector({selectorId: 'box-genre', filterLabel: t('focusGenre'), choices, marks, t, number})};
 }
 
-export function relationshipCards(summary, {langIndex, number, t}) {
+export function relationshipCards(summary, {langIndex, reportLang, number, t}) {
   const scatterTitle = t('scatterTitle'), scatterScale = t('scatterScale');
   const scatter = summary.minutesStress ? scatterStats(summary.minutesStress) : null;
   const scatterCard = {title: scatterTitle, scale: scatterScale, wide: true,
@@ -162,14 +162,15 @@ export function relationshipCards(summary, {langIndex, number, t}) {
     }) : '';
     Object.assign(scatterCard, scatterPlot(scatter, scatterTitle, scatterScale, number, t), {
       insight: comparison ? `${insight} ${comparison}` : insight,
-      report: scatterReport(scatter, summary.total, sensitivity)
+      report: scatterReport(scatter, summary.total, sensitivity, reportLang)
     });
   }
 
   const boxTitle = t('boxTitle'), boxScale = t('boxScale', {minimum: smallGroupSize});
+  const reportIndex = reportLang === 'ko' ? 2 : 1;
   const groups = options.genre.filter(([key]) => key !== 'none').flatMap(option => {
     const stats = distributionStats(summary.genreStress?.[option[0]] ?? {});
-    return stats ? [{key: option[0], label: option[langIndex + 1], vi: option[1], stats}] : [];
+    return stats ? [{key: option[0], label: option[langIndex + 1], reportLabel: option[reportIndex], stats}] : [];
   });
   const total = groups.reduce((sum, group) => sum + group.stats.n, 0);
   const boxCard = {title: boxTitle, scale: boxScale, wide: true,
@@ -178,7 +179,7 @@ export function relationshipCards(summary, {langIndex, number, t}) {
     const boxes = groups.filter(group => group.stats.n >= smallGroupSize).length;
     Object.assign(boxCard, boxPlot(groups, boxTitle, boxScale, number, t), {
       insight: t('boxSummary', {n: number(total), groups: number(groups.length), boxes: number(boxes)}),
-      report: boxReport(groups.map(group => ({...group, label: group.vi})), summary.total, smallGroupSize)
+      report: boxReport(groups.map(group => ({...group, label: group.reportLabel})), summary.total, smallGroupSize, reportLang)
     });
   }
   return [scatterCard, boxCard];

@@ -1,9 +1,9 @@
 import {text} from './i18n.js?v=13';
 import {connectSurveyShare, loadKakaoShare, surveyInviteUrl, surveyShareSection} from './sharing.js?v=15';
+import {initialLanguage, languages} from './locale.js';
 
-const languages = ['vi', 'ko', 'en', 'zh', 'mn'];
 const params = new URL(location.href).searchParams;
-const language = languages.includes(params.get('lang')) ? params.get('lang') : 'vi';
+const language = initialLanguage(location.href);
 const t = key => text[key][languages.indexOf(language)];
 const selectedApp = params.get('app');
 const inviteUrl = surveyInviteUrl(location.href, language);

@@ -1,28 +1,29 @@
 <!doctype html>
-<html lang="vi">
+<html lang="ko">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
   <meta name="robots" content="noindex">
-  <title>Survey A · Research admin</title>
-  <link rel="stylesheet" href="style.css?v=9">
+  <title>연구 관리자 · Survey A</title>
+  <link rel="stylesheet" href="style.css?v=10">
 </head>
 <body>
   <header><div class="top">
     <a href="../">Music Healing <b>Survey A</b></a>
     <nav id="languages" aria-label="Language">
-      <button data-lang="vi">VI</button><button data-lang="ko">한국어</button>
-      <button data-lang="en">EN</button><button data-lang="zh">中文</button>
+      <button data-lang="vi" lang="vi">VI</button><button data-lang="ko" lang="ko" aria-pressed="true">한국어</button>
+      <button data-lang="en" lang="en">EN</button><button data-lang="zh" lang="zh-Hans">中文</button>
+      <button data-lang="mn" lang="mn">Монгол</button>
     </nav>
   </div></header>
   <main>
     <section class="card admin-login" id="login-panel" aria-labelledby="sign-in-title">
-      <h1 id="sign-in-title">Đăng nhập quản trị</h1>
+      <h1 id="sign-in-title">관리자 로그인</h1>
       <form id="login" method="post">
-        <label for="key" id="key-label">Mật khẩu quản trị</label>
+        <label for="key" id="key-label">관리자 비밀번호</label>
         <input type="password" id="key" autocomplete="current-password" required maxlength="256">
-        <button type="submit" class="primary" id="online" disabled>Đăng nhập</button>
+        <button type="submit" class="primary" id="online" disabled>로그인</button>
         <p id="login-status" role="status"></p>
       </form>
     </section>
@@ -60,6 +61,6 @@
     </section>
   </main>
   <script src="../config.js?v=2-online"></script>
-  <script type="module" src="dashboard.js?v=9"></script>
+  <script type="module" src="dashboard.js?v=10"></script>
 </body>
 </html>
