@@ -29,6 +29,11 @@
 .share-actions button{min-height:44px;padding:9px 14px;font-size:14px;background:#fff}
 #share-status{margin:0;font-size:13px}
 #share-status:not(:empty){margin-top:10px}
+#share-browser-links{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:12px}
+#share-browser-links a{display:inline-block;min-height:44px;padding:9px 14px;font-size:14px;text-decoration:none;background:#fff}
+.share-page .survey-share{border-top:0;margin:0;padding:0}
+.share-page .share-actions{display:flex}
+.share-page #survey-link{display:inline-block;margin-top:18px;color:var(--purple);font-size:14px}
 @media(max-width:600px){
   .share-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
 }

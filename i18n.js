@@ -357,11 +357,39 @@ export const text = {
     "Найзуудаа судалгаанд урих"
   ],
   "shareAppsUnavailable": [
-    "Hãy mở trang này trong Chrome hoặc Safari, rồi chọn KakaoTalk hoặc Messenger trong menu Chia sẻ của trình duyệt.",
-    "Chrome이나 Safari에서 이 페이지를 연 뒤 브라우저의 공유 메뉴에서 카카오톡 또는 Messenger를 선택하세요.",
-    "Open this page in Chrome or Safari, then choose KakaoTalk or Messenger from the browser’s Share menu.",
-    "请在 Chrome 或 Safari 中打开此页，然后在浏览器的分享菜单中选择 KakaoTalk 或 Messenger。",
-    "Энэ хуудсыг Chrome эсвэл Safari-д нээгээд хөтчийн хуваалцах цэснээс KakaoTalk эсвэл Messenger-ийг сонгоно уу."
+    "Nếu đang mở trang trong một ứng dụng, hãy chọn Mở trong trình duyệt từ menu ⋮, rồi nhấn lại nút chia sẻ.",
+    "앱 안에서 보고 있다면 메뉴에서 ‘브라우저로 열기’를 선택한 뒤 공유 버튼을 다시 누르세요.",
+    "If you opened this page inside another app, choose Open in browser from its menu, then tap the share button again.",
+    "如果在应用内打开了此页面，请在应用菜单中选择用浏览器打开，然后再次点击分享按钮。",
+    "Хуудсыг апп дотроос нээсэн бол цэснээс Хөтчөөр нээхийг сонгоод хуваалцах товчийг дахин дарна уу."
+  ],
+  "shareBrowserHelp": [
+    "Chia sẻ qua trình duyệt để gửi liên kết mà không cần làm lại khảo sát.",
+    "브라우저에서 공유 화면을 열면 설문에 다시 응답할 필요 없이 링크를 보낼 수 있습니다.",
+    "Open the sharing page in your browser to send the link without taking the survey again.",
+    "在浏览器中打开分享页面即可发送链接，无需重新填写问卷。",
+    "Судалгааг дахин бөглөхгүйгээр холбоос илгээхийн тулд хуваалцах хуудсыг хөтчөөр нээнэ үү."
+  ],
+  "shareOpenChrome": [
+    "Mở trang chia sẻ trong Chrome",
+    "Chrome에서 공유 화면 열기",
+    "Open sharing in Chrome",
+    "在 Chrome 中打开分享页面",
+    "Хуваалцах хуудсыг Chrome-д нээх"
+  ],
+  "shareOpenPage": [
+    "Mở trang chia sẻ",
+    "공유 화면 열기",
+    "Open sharing page",
+    "打开分享页面",
+    "Хуваалцах хуудсыг нээх"
+  ],
+  "shareOpenSurvey": [
+    "Mở khảo sát",
+    "설문 열기",
+    "Open survey",
+    "打开问卷",
+    "Судалгааг нээх"
   ],
   "shareKakaoChoose": [
     "Chọn KakaoTalk trong menu chia sẻ.",

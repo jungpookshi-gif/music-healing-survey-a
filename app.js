@@ -1,8 +1,8 @@
 import {fields, options} from './schema.js?v=3';
-import {text} from './i18n.js?v=12';
+import {text} from './i18n.js?v=13';
 import {validAnswer, makePayload, noStressListening, detailLimits, ageRange} from './logic.js?v=4';
 import {createPlayer} from './music.js?v=3';
-import {connectSurveyShare, loadKakaoShare, surveyInviteUrl} from './sharing.js?v=12';
+import {connectSurveyShare, loadKakaoShare, surveyInviteUrl, surveyShareSection} from './sharing.js?v=13';
 
 const languages = ['vi', 'ko', 'en', 'zh', 'mn'];
 const draftKey = 'mhs-a-v2';
@@ -361,17 +361,6 @@ function download() {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-function shareSection() {
-  return `<section class="survey-share" aria-labelledby="share-title">
-    <h2 id="share-title">${t('shareHeading')}</h2>
-    <div class="share-actions">
-      <button class="secondary" type="button" id="share-kakao">KakaoTalk</button>
-      <button class="secondary" type="button" id="share-messenger">Facebook Messenger</button>
-    </div>
-    <p id="share-status" role="status"></p>
-  </section>`;
-}
-
 function renderDone() {
   app.innerHTML = `<div class="card completion">
     <figure class="record-cover">
@@ -385,7 +374,7 @@ function renderDone() {
     <div class="notice">${t(receipt ? 'sent' : 'localdone')}</div>
     <div class="actions"><button class="secondary" id="edit" ${receipt ? 'disabled' : ''}>${t('edit')}</button>
       <button class="primary" id="download">${t('download')}</button></div>
-    ${receipt ? shareSection() : ''}
+    ${receipt ? surveyShareSection(t) : ''}
   </div>`;
   const image = app.querySelector('.record-sleeve img');
   if (image) image.onerror = () => image.remove();

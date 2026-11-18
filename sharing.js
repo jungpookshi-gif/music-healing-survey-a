@@ -4,6 +4,21 @@ export function surveyInviteUrl(pageUrl, language) {
   return invite.href;
 }
 
+export function surveyShareSection(t, selectedApp = '') {
+  return `<section class="survey-share" aria-labelledby="share-title">
+    <h2 id="share-title">${t('shareHeading')}</h2>
+    <div class="share-actions">
+      <button class="secondary" type="button" id="share-kakao"${selectedApp === 'messenger' ? ' hidden' : ''}>KakaoTalk</button>
+      <button class="secondary" type="button" id="share-messenger"${selectedApp === 'kakao' ? ' hidden' : ''}>Facebook Messenger</button>
+    </div>
+    <p id="share-status" role="status"></p>
+    <div id="share-browser-links" hidden>
+      <a id="share-open-chrome" class="secondary" target="_blank" rel="noopener" hidden>${t('shareOpenChrome')}</a>
+      <a id="share-open-browser" class="secondary" target="_blank" rel="noopener">${t('shareOpenPage')}</a>
+    </div>
+  </section>`;
+}
+
 let kakaoSdk;
 export function loadKakaoShare(key, browser = window) {
   if (typeof key !== 'string' || !key.trim()) return Promise.resolve(null);
@@ -29,21 +44,45 @@ export function loadKakaoShare(key, browser = window) {
   return kakaoSdk;
 }
 
-export function connectSurveyShare(section, url, t, {device = navigator, kakao = null} = {}) {
+export function connectSurveyShare(section, url, t, {device = navigator, kakao = null, offerBrowser = true} = {}) {
   const kakaoButton = section.querySelector('#share-kakao');
   const messengerButton = section.querySelector('#share-messenger');
   const status = section.querySelector('#share-status');
+  const browserLinks = section.querySelector('#share-browser-links');
+  const openChrome = section.querySelector('#share-open-chrome');
+  const openBrowser = section.querySelector('#share-open-browser');
 
-  async function shareWithDevice(prompt) {
-    if (typeof device.share !== 'function') {
+  function showBrowserHelp(app) {
+    if (!offerBrowser) {
       status.textContent = t('shareAppsUnavailable');
+      return;
+    }
+    const link = new URL('share.html', url);
+    const language = new URL(url).searchParams.get('lang');
+    if (language) link.searchParams.set('lang', language);
+    link.searchParams.set('app', app);
+    const opensChrome = link.protocol === 'https:' && /\bAndroid\b/i.test(device.userAgent ?? '');
+    openBrowser.href = link.href;
+    openChrome.hidden = !opensChrome;
+    if (opensChrome) {
+      openChrome.href = `intent://${link.host}${link.pathname}${link.search}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(link.href)};end`;
+    }
+    status.textContent = t('shareBrowserHelp');
+    browserLinks.hidden = false;
+  }
+
+  async function shareWithDevice(app, prompt) {
+    browserLinks.hidden = true;
+    if (typeof device.share !== 'function') {
+      showBrowserHelp(app);
       return;
     }
     status.textContent = t(prompt);
     try {
       await device.share({url});
     } catch (error) {
-      status.textContent = error?.name === 'AbortError' ? '' : t('shareAppsUnavailable');
+      if (error?.name === 'AbortError') status.textContent = '';
+      else showBrowserHelp(app);
     }
   }
 
@@ -52,6 +91,7 @@ export function connectSurveyShare(section, url, t, {device = navigator, kakao =
 
   kakaoButton.onclick = async () => {
     status.textContent = '';
+    browserLinks.hidden = true;
     if (kakaoShare) {
       try {
         await kakaoShare(url);
@@ -60,8 +100,8 @@ export function connectSurveyShare(section, url, t, {device = navigator, kakao =
         // Keep device sharing available if the SDK cannot open its picker.
       }
     }
-    await shareWithDevice('shareKakaoChoose');
+    await shareWithDevice('kakao', 'shareKakaoChoose');
   };
 
-  messengerButton.onclick = () => shareWithDevice('shareMessengerChoose');
+  messengerButton.onclick = () => shareWithDevice('messenger', 'shareMessengerChoose');
 }

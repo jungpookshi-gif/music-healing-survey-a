@@ -1,4 +1,4 @@
-import {connectSurveyShare, loadKakaoShare, surveyInviteUrl} from '../sharing.js';
+import {connectSurveyShare, loadKakaoShare, surveyInviteUrl, surveyShareSection} from '../sharing.js';
 import test from 'node:test';import assert from 'node:assert/strict';import {fields,options} from '../schema.js';import {text} from '../i18n.js';import {validAnswer} from '../logic.js';
 test('exactly ten substantive questions, all translated',()=>{assert.equal(fields.length,10);assert.equal(new Set(fields.map(f=>f.key)).size,10);fields.forEach(f=>assert.equal(f.label.length,5));Object.values(text).forEach(t=>assert.equal(t.length,5));Object.values(options).flat().forEach(o=>assert.equal(o.length,6));});
 test('zero is valid, unanswered required scales are not',()=>{const f=fields.find(f=>f.key==='stress_week');assert.equal(validAnswer(f,{}),false);assert.equal(validAnswer(f,{stress_week:0}),true);for(const v of [-1,11,1.5,NaN])assert.equal(validAnswer(f,{stress_week:v}),false);});
@@ -17,7 +17,8 @@ test('the invitation link opens a fresh survey with only the chosen language', (
 
 function shareControls() {
   const nodes = {
-    '#share-kakao': {}, '#share-messenger': {}, '#share-status': {}
+    '#share-kakao': {}, '#share-messenger': {}, '#share-status': {},
+    '#share-browser-links': {hidden:true}, '#share-open-chrome': {hidden:true}, '#share-open-browser': {}
   };
   return {nodes, section:{querySelector:selector=>nodes[selector]}};
 }
@@ -33,7 +34,7 @@ test('Messenger calls the system picker immediately with only the public URL', a
   assert.equal(nodes['#share-status'].textContent,'shareMessengerChoose');
 });
 
-test('both buttons give browser sharing instructions when the system picker is unavailable', async () => {
+test('blocked sharing offers a separate page that remembers the selected app and language', async () => {
   const url='https://example.test/survey/?lang=ko';
   const clipboard={writeText(){assert.fail('Sharing must never copy');}};
   for (const device of [
@@ -42,11 +43,38 @@ test('both buttons give browser sharing instructions when the system picker is u
   ]) {
     const {nodes,section}=shareControls();
     connectSurveyShare(section,url,key=>key,{device});
+    const recovery=nodes['#share-open-browser'];
     await nodes['#share-messenger'].onclick();
-    assert.equal(nodes['#share-status'].textContent,'shareAppsUnavailable');
+    assert.equal(nodes['#share-status'].textContent,'shareBrowserHelp');
+    assert.equal(nodes['#share-browser-links'].hidden,false);
+    assert.equal(nodes['#share-open-chrome'].hidden,true);
+    assert.equal(recovery.href,'https://example.test/survey/share.html?lang=ko&app=messenger');
     await nodes['#share-kakao'].onclick();
-    assert.equal(nodes['#share-status'].textContent,'shareAppsUnavailable');
+    assert.equal(recovery.href,'https://example.test/survey/share.html?lang=ko&app=kakao');
   }
+});
+
+test('Android recovery opens Chrome using a fallback with only the language and selected app', async () => {
+  const {nodes,section}=shareControls();
+  const url='https://example.test/survey/?lang=vi&response=private#done';
+  connectSurveyShare(section,url,key=>key,{device:{userAgent:'Mozilla/5.0 (Linux; Android 14)'}});
+  await nodes['#share-kakao'].onclick();
+  const fallback='https://example.test/survey/share.html?lang=vi&app=kakao';
+  const recovery=nodes['#share-open-chrome'];
+  assert.equal(recovery.hidden,false);
+  assert.equal(recovery.href,`intent://example.test/survey/share.html?lang=vi&app=kakao#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(fallback)};end`);
+  assert.equal(nodes['#share-open-browser'].href,fallback);
+});
+
+test('the separate sharing page has the correct app button and cannot link to itself on failure', async () => {
+  const {nodes,section}=shareControls();
+  const markup=surveyShareSection(value=>value,'messenger');
+  assert.match(markup,/id="share-kakao" hidden/);
+  assert.match(markup,/id="share-messenger">Facebook Messenger/);
+  connectSurveyShare(section,'https://example.test/survey/',key=>key,{device:{},offerBrowser:false});
+  await nodes['#share-messenger'].onclick();
+  assert.equal(nodes['#share-browser-links'].hidden,true);
+  assert.equal(nodes['#share-status'].textContent,'shareAppsUnavailable');
 });
 
 test('dismissing the phone share menu clears the sharing prompt', async () => {
@@ -56,6 +84,7 @@ test('dismissing the phone share menu clears the sharing prompt', async () => {
   });
   await nodes['#share-messenger'].onclick();
   assert.equal(nodes['#share-status'].textContent,'');
+  assert.equal(nodes['#share-browser-links'].hidden,true);
 });
 
 test('KakaoTalk uses the device picker when the SDK is not configured', async () => {
