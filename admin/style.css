@@ -43,3 +43,25 @@
 .table-frame dd{margin:0;text-align:end;font-variant-numeric:tabular-nums}
 .table-note{margin-top:12px}
 @media(max-width:680px){.chart-grid{grid-template-columns:1fr}}
+
+.chart-report{margin-top:14px;border-top:1px solid #eee9f3;padding-top:12px}
+.chart-report summary{cursor:pointer;color:#503780;font-weight:700;font-size:14px}
+.chart-report div{max-width:76ch}
+.chart-report p{font-size:14px;line-height:1.7;margin:12px 0;color:#423c51}
+.relationship-controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:14px 0 0;color:#503b75;font-size:14px;font-weight:650}
+.relationship-controls select{max-width:100%;padding:7px 10px;border:1px solid #d8d2e5;border-radius:7px;background:#fff;font:inherit;color:#342746}
+.relationship-controls select:focus-visible{outline:3px solid #4d85ca;outline-offset:2px}
+.chart-frame .relationship-plot{min-width:550px;max-width:900px}
+.chart-median-guide{stroke:#9985b3;stroke-width:1.5;stroke-dasharray:5 5}
+.relationship-mark{cursor:crosshair}
+.muted-mark{opacity:.21}
+.scatter-point{fill:#8059c8;fill-opacity:.66;stroke:#50308d;stroke-width:1.1}
+.box-whisker{stroke:#726287;stroke-width:1.5}
+.box-body{fill:#d8caed;stroke:#7350b1;stroke-width:1.4}
+.box-median{stroke:#462475;stroke-width:2.8}
+.box-point{fill:#6f49b7;stroke:#fff;stroke-width:1}
+.box-row-hit{fill:transparent}
+.relationship-mark:hover,.relationship-mark:focus{opacity:1;outline:none}
+.relationship-mark:hover .scatter-point,.relationship-mark:focus .scatter-point{stroke:#24183f;stroke-width:2.2;fill-opacity:1}
+.relationship-mark:hover .box-row-hit,.relationship-mark:focus .box-row-hit{fill:#f2ecfa;fill-opacity:.7}
+.relationship-detail{margin:0 0 12px;padding:8px 11px;background:#f8f5fc;border-radius:6px;color:#503c72;font-size:13px;min-height:2.5em}

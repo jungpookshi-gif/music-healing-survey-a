@@ -4,7 +4,7 @@ import {VERSION,validAnswer,previousMaxAge} from '../logic.js?v=5';
 export const ageBands = [[18,24],[25,34],[35,44],[45,54],[55,64],[65,previousMaxAge]];
 
 export function emptySummary() {
-  return {ok:true,total:0,counts:Object.fromEntries(fields.map(f=>[f.key,{}])),stressByFrequency:{},ageGenre:{}};
+  return {ok:true,total:0,counts:Object.fromEntries(fields.map(f=>[f.key,{}])),stressByFrequency:{},ageGenre:{},minutesStress:{},genreStress:{}};
 }
 
 // CSV exported by Google Sheets. Quoted fields may contain commas or newlines.
@@ -53,7 +53,13 @@ export function fromCsv(content) {
     }
     const group=summary.stressByFrequency[answers.stress_frequency]??={n:0,sum:0};
     group.n++;group.sum+=answers.stress_week;
+    if(answers.listen_min !== undefined) {
+      const scores = summary.minutesStress[answers.listen_min] ??= {};
+      scores[answers.stress_week] = (scores[answers.stress_week] || 0) + 1;
+    }
     if(answers.stress_genre !== 'none') {
+      const scores = summary.genreStress[answers.stress_genre] ??= {};
+      scores[answers.stress_week] = (scores[answers.stress_week] || 0) + 1;
       const [low] = ageBands.find(([,high]) => answers.age <= high);
       const genres = summary.ageGenre[low] ??= {};
       genres[answers.stress_genre] = (genres[answers.stress_genre] || 0) + 1;

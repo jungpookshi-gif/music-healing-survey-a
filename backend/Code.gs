@@ -42,7 +42,7 @@ function setup() {
 function json_(value) {
   return ContentService.createTextOutput(JSON.stringify(value)).setMimeType(ContentService.MimeType.JSON);
 }
-function doGet() { return json_({service:VERSION, detailsSupported:true, ageRange:LIMITS.age, ageGenreAvailable:true}); }
+function doGet() { return json_({service:VERSION, detailsSupported:true, ageRange:LIMITS.age, ageGenreAvailable:true, pairedStressAvailable:true}); }
 function validate_(data, maxAge = LIMITS.age[1]) {
   if (!data || data.schema !== VERSION || data.consent !== true ||
       !['vi','ko','en','zh','mn'].includes(data.language) ||
@@ -124,6 +124,8 @@ function summarize_(key) {
   for (const k of KEYS) counts[k] = {};
   const stressByFrequency = {};
   const ageGenre = {};
+  const minutesStress = {};
+  const genreStress = {};
   for (const row of rows) {
     for (let j=0;j<KEYS.length;j++) {
       const value = row[6+j], column = counts[KEYS[j]];
@@ -134,8 +136,19 @@ function summarize_(key) {
       const group = stressByFrequency[freq] || {n:0,sum:0};
       group.n++; group.sum+=stress; stressByFrequency[freq]=group;
     }
-    const age = row[6], genre = row[12];
-    if (Number.isInteger(age) && genre !== 'none' && CHOICES.stress_genre.includes(genre)) {
+    const age = row[6], minutes = row[10], genre = row[12];
+    const hasGenre = genre !== 'none' && CHOICES.stress_genre.includes(genre);
+    if (Number.isInteger(stress) && stress >= 0 && stress <= 10) {
+      if (Number.isInteger(minutes) && minutes >= 0 && minutes <= 1440) {
+        const scores = minutesStress[minutes] || (minutesStress[minutes] = {});
+        scores[stress] = (scores[stress] || 0) + 1;
+      }
+      if (hasGenre) {
+        const scores = genreStress[genre] || (genreStress[genre] = {});
+        scores[stress] = (scores[stress] || 0) + 1;
+      }
+    }
+    if (Number.isInteger(age) && hasGenre) {
       const band = AGE_BANDS.find(([low,high]) => age >= low && age <= high);
       if (band) {
         const genres = ageGenre[band[0]] || (ageGenre[band[0]] = {});
@@ -143,7 +156,7 @@ function summarize_(key) {
       }
     }
   }
-  return {ok:true,total:rows.length,counts:counts,stressByFrequency:stressByFrequency,ageGenre:ageGenre};
+  return {ok:true,total:rows.length,counts:counts,stressByFrequency:stressByFrequency,ageGenre:ageGenre,minutesStress:minutesStress,genreStress:genreStress};
 }
 function doPost(e) {
   try {

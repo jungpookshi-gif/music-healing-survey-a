@@ -1,24 +1,9 @@
 import {fields, options} from '../schema.js?v=4';
-import {ageBands, barsFor, mean} from './analysis.js?v=5';
-
-const svgNamespace = 'http://www.w3.org/2000/svg';
-
-function svg(tag, attributes, text) {
-  const element = document.createElementNS(svgNamespace, tag);
-  for (const [name, value] of Object.entries(attributes)) element.setAttribute(name, value);
-  if (text !== undefined) element.textContent = text;
-  return element;
-}
-
-function canvas(width, height, title, scale) {
-  const plot = svg('svg', {viewBox: `0 0 ${width} ${height}`, role: 'img', 'aria-label': `${title}. ${scale}`, focusable: 'false'});
-  plot.append(svg('title', {}, title), svg('desc', {}, scale));
-  return plot;
-}
-
-function text(x, y, value, attributes = {}) {
-  return svg('text', {x, y, ...attributes}, value);
-}
+import {ageBands, barsFor, mean} from './analysis.js?v=6';
+import {canvas, svg, text} from './plot.js?v=1';
+import {distributionStats} from './relationship-analysis.js?v=1';
+import {frequencyReport, genreReport, minutesReport, scoreReport} from './chart-interpretation.js?v=1';
+import {relationshipCards} from './relationship-charts.js?v=1';
 
 function countAxis(values) {
   const peak = Math.max(1, ...values);
@@ -120,7 +105,7 @@ function mostFrequent(rows, total, number, t) {
   });
 }
 
-function addCard(target, {title, scale, plot, insight, wide}) {
+function addCard(target, {title, scale, plot, controls, detail, insight, report, wide}, t) {
   const card = document.createElement('article');
   card.className = wide ? 'card chart-card chart-wide' : 'card chart-card';
   const heading = document.createElement('h3');
@@ -129,6 +114,7 @@ function addCard(target, {title, scale, plot, insight, wide}) {
   description.className = 'meta';
   description.textContent = scale;
   card.append(heading, description);
+  if (controls) card.append(controls);
   if (plot) {
     const frame = document.createElement('div');
     frame.className = 'chart-frame';
@@ -136,18 +122,34 @@ function addCard(target, {title, scale, plot, insight, wide}) {
     frame.append(plot);
     card.append(frame);
   }
+  if (detail) card.append(detail);
   const findings = document.createElement('p');
   findings.className = 'insight';
   findings.textContent = insight;
   card.append(findings);
+  if (report) {
+    const disclosure = document.createElement('details');
+    disclosure.className = 'chart-report';
+    const heading = document.createElement('summary');
+    heading.textContent = t('detailedReport');
+    const body = document.createElement('div');
+    body.setAttribute('lang', 'vi');
+    for (const paragraph of report) {
+      const element = document.createElement('p');
+      element.textContent = paragraph;
+      body.append(element);
+    }
+    disclosure.append(heading, body);
+    card.append(disclosure);
+  }
   target.append(card);
 }
 
 export function renderCharts(target, summary, {langIndex, number, t}) {
   target.replaceChildren();
-  const add = options => addCard(target, options);
+  const add = card => addCard(target, card, t);
   const genre = options.genre.filter(([key]) => key !== 'none').map(option => ({
-    key: option[0], label: option[langIndex + 1], value: summary.counts.stress_genre[option[0]] || 0
+    key: option[0], label: option[langIndex + 1], vi: option[1], value: summary.counts.stress_genre[option[0]] || 0
   }));
   if (summary.ageGenre) {
     const rows = ageBands.map(([low, high], index) => {
@@ -165,14 +167,16 @@ export function renderCharts(target, summary, {langIndex, number, t}) {
         ...leaders[0], ties: number(leaders.length), count: number(max), total: number(total)
       });
     }
-    add({title, scale, plot: total ? heatmapPlot(rows, genre, title, scale, number, t) : null, insight, wide: true});
+    add({title, scale, plot: total ? heatmapPlot(rows, genre, title, scale, number, t) : null, insight,
+      report: total ? genreReport(genre.map(g => ({label: g.vi, value: g.value})), rows, summary.total) : null, wide: true});
   } else {
     const title = t('genreChart'), scale = t('genreScale');
     const total = sum(genre);
     const rows = genre.sort((a, b) => b.value - a.value).map(row => ({...row, caption: number(row.value)}));
     const insight = total ? mostFrequent(rows, total, number, t) : t('empty');
     add({title, scale, plot: total ? horizontalPlot(rows, countAxis(rows.map(row => row.value)), title, scale, number) : null,
-      insight: `${insight} ${t('heatmapCsv')}`, wide: true});
+      insight: `${insight} ${t('heatmapCsv')}`,
+      report: total ? genreReport(genre.map(g => ({label: g.vi, value: g.value})), null, summary.total) : null, wide: true});
   }
 
   const minutesTitle = t('minutesChart'), minutesScale = t('minutesScale');
@@ -181,25 +185,29 @@ export function renderCharts(target, summary, {langIndex, number, t}) {
   const minutesPlot = minutes.map(row => ({...row, caption: number(row.value)}));
   add({title: minutesTitle, scale: minutesScale,
     plot: minutesTotal ? horizontalPlot(minutesPlot, countAxis(minutes.map(row => row.value)), minutesTitle, minutesScale, number) : null,
-    insight: minutesTotal ? `${mostFrequent(minutes, minutesTotal, number, t)} ${t('minutesInsight', {mean: number(mean(summary.counts.listen_min), 1)})}` : t('empty')});
+    insight: minutesTotal ? `${mostFrequent(minutes, minutesTotal, number, t)} ${t('minutesInsight', {mean: number(mean(summary.counts.listen_min), 1)})}` : t('empty'),
+    report: minutesTotal ? minutesReport(minutes, distributionStats(summary.counts.listen_min), summary.total) : null});
 
   const scoreTitle = t('scoreChart'), scoreScale = t('scoreScale');
   const scores = barsFor(fields.find(field => field.key === 'stress_week'), summary.counts.stress_week, langIndex);
   const scoreTotal = sum(scores), high = sum(scores.slice(7));
   add({title: scoreTitle, scale: scoreScale, plot: scoreTotal ? scorePlot(scores, scoreTitle, scoreScale, number) : null,
-    insight: scoreTotal ? t('scoreInsight', {mean: number(mean(summary.counts.stress_week), 1), high: number(high), total: number(scoreTotal), share: number(high / scoreTotal * 100, 1)}) : t('empty')});
+    insight: scoreTotal ? t('scoreInsight', {mean: number(mean(summary.counts.stress_week), 1), high: number(high), total: number(scoreTotal), share: number(high / scoreTotal * 100, 1)}) : t('empty'),
+    report: scoreTotal ? scoreReport(scores, distributionStats(summary.counts.stress_week), high, summary.total) : null});
 
   const frequencyTitle = t('compare'), frequencyScale = t('frequencyScale');
   const frequency = options.stress_frequency.filter(([key]) => key !== 'no_stress').flatMap(option => {
     const group = summary.stressByFrequency[option[0]];
     if (!group?.n) return [];
     const value = group.sum / group.n;
-    return [{label: option[langIndex + 1], value, caption: `${number(value, 1)} · n=${number(group.n)}`}];
+    return [{label: option[langIndex + 1], vi: option[1], n: group.n, value, caption: `${number(value, 1)} · n=${number(group.n)}`}];
   });
   const frequencyValues = frequency.map(row => row.value);
   const frequencyInsight = frequency.length > 1 ? t('frequencySpread', {low: number(Math.min(...frequencyValues), 1), high: number(Math.max(...frequencyValues), 1)})
     : frequency.length ? t('frequencySingle', {group: frequency[0].label, mean: number(frequency[0].value, 1)}) : t('empty');
   add({title: frequencyTitle, scale: frequencyScale, wide: true,
     plot: frequency.length ? horizontalPlot(frequency, [0,2,4,6,8,10], frequencyTitle, frequencyScale, number, true) : null,
-    insight: frequency.length ? `${frequencyInsight} ${t('noCausality')}` : frequencyInsight});
+    insight: frequency.length ? `${frequencyInsight} ${t('noCausality')}` : frequencyInsight,
+    report: frequency.length ? frequencyReport(frequency.map(row => ({...row, label: row.vi})), summary.total) : null});
+  relationshipCards(summary, {langIndex, number, t}).forEach(add);
 }

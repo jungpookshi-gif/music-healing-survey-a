@@ -1,7 +1,7 @@
 import {fields} from '../schema.js?v=4';
-import {fromCsv,mean,barsFor} from './analysis.js?v=5';
-import {words,shortNames} from './labels.js?v=7';
-import {renderCharts} from './charts.js?v=1';
+import {fromCsv,mean,barsFor} from './analysis.js?v=6';
+import {words,shortNames} from './labels.js?v=8';
+import {renderCharts} from './charts.js?v=2';
 
 const languages=['vi','ko','en','zh'];
 const query=new URL(location.href);

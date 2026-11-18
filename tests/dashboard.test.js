@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {fields} from '../schema.js';
 import {validAnswer,VERSION} from '../logic.js';
 import {fromCsv,mean,parseCsv} from '../admin/analysis.js';
+import {distributionStats,scatterStats} from '../admin/relationship-analysis.js';
 import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
 
@@ -42,14 +43,27 @@ test('server validates v2, denies unauthenticated statistics, and summarizes the
  env.validate_(payload);assert.throws(()=>env.validate_({...payload,answers:{...payload.answers,genre_like:0}}));
 });
 
-test('the heatmap pairs age and genre within the same response in both data sources', () => {
+test('joint chart counts pair answers within the same response in both data sources', () => {
  const rows=[header.split(','),...listeningRows];
  const env={PropertiesService:{getScriptProperties:()=>({getProperty:()=> 'fixture-only'})},SpreadsheetApp:{openById:()=>({getSheetByName:()=>({getDataRange:()=>({getValues:()=>rows})})})}};
  vm.createContext(env);
  vm.runInContext(readFileSync(new URL('../backend/Code.gs',import.meta.url),'utf8'),env);
  const frontend=fromCsv(listeningCsv).summary;
  assert.deepEqual(frontend.ageGenre,{18:{pop:1},25:{ballad:1},65:{pop:1}});
+ assert.deepEqual(frontend.minutesStress,{0:{0:1},15:{8:1},30:{6:1}});
+ assert.deepEqual(frontend.genreStress,{pop:{0:1,6:1},ballad:{8:1}});
  assert.deepEqual(JSON.parse(JSON.stringify(env.summarize_('fixture-only'))),frontend);
+});
+
+test('joint chart statistics retain repeated coordinates, rank ties, and boxplot outliers', () => {
+ const paired=scatterStats({0:{0:2},15:{4:1},30:{10:2}});
+ assert.equal(paired.n,5);
+ assert.equal(paired.points.length,3);
+ assert.equal(paired.rho,1);
+ assert.equal(scatterStats({0:{0:3,5:2}}).rho,null);
+ assert.equal(scatterStats({0:{10:2},15:{4:1},30:{0:2}}).rho,-1);
+ const box=distributionStats({0:1,5:3,6:3,10:1});
+ assert.deepEqual([box.q1,box.median,box.q3,box.lowerWhisker,box.upperWhisker],[5,5.5,6,5,6]);
 });
 
 test('collector preserves old rows and stores optional details once, outside aggregates', () => {
@@ -134,7 +148,7 @@ test('administrator dashboard requires a successful server password check and lo
      assert.equal(body.get('action'),'summary');
      const valid = body.get('key')==='test-password';
      const result = valid ? fromCsv(listeningCsv).summary : {ok:false,error:'access'};
-     if(valid) delete result.ageGenre;
+     if(valid) for (const key of ['ageGenre','minutesStress','genreStress']) delete result[key];
      return {ok:true,json:async()=>result};
    }
  };
@@ -165,15 +179,25 @@ test('administrator dashboard requires a successful server password check and lo
  assert.equal(element('login-panel').hidden,true);
  assert.equal(element('kpis').children.length,3);
  const charts=element('charts');
- assert.equal(charts.children.length,4);
+ assert.equal(charts.children.length,6);
  assert.equal(charts.children[0].children[0].textContent,'Genres listened to when stressed');
  const plotCard = card => card.children.find(child=>child.className==='chart-frame');
- assert.ok(charts.children.every(card=>plotCard(card)?.children[0].tag==='svg' && card.children.at(-1).className==='insight'));
+ assert.ok(charts.children.slice(0,4).every(card=>plotCard(card)?.children[0].tag==='svg'));
+ assert.equal(plotCard(charts.children[4]),undefined);
+ assert.equal(plotCard(charts.children[5]),undefined);
  assert.equal(element('table-body').children.length,fields.length);
  await element('csv').onchange({target:{files:[{text:async()=>listeningCsv}]}});
- assert.equal(charts.children.length,4);
+ assert.equal(charts.children.length,6);
  assert.equal(charts.children[0].children[0].textContent,'Age group × genre listened to when stressed');
- assert.equal(charts.children[0].children.at(-1).textContent,'3 cells tie for the largest count at 1 each, out of 3 genre answers.');
+ assert.equal(charts.children[0].children.find(child=>child.className==='insight').textContent,'3 cells tie for the largest count at 1 each, out of 3 genre answers.');
+ assert.equal(charts.children[4].children[0].textContent,'Listening time × stress score');
+ assert.equal(charts.children[5].children[0].textContent,'Stress scores by music genre');
+ for(const card of charts.children) {
+   assert.equal(plotCard(card).children[0].tag,'svg');
+   const report=card.children.find(child=>child.className==='chart-report');
+   const copy=report.children[1].children.map(p=>p.textContent).join(' ');
+   assert.ok((copy.match(/\p{L}+/gu) ?? []).length>=300,card.children[0].textContent);
+ }
  assert.equal(element('key').value,'');
  element('sign-out').onclick();
  assert.equal(element('dashboard').hidden,true);
