@@ -378,11 +378,11 @@ export const text = {
     "Хуваалцах хуудсыг Chrome-д нээх"
   ],
   "shareOpenPage": [
-    "Mở trang khảo sát",
-    "설문 페이지 열기",
-    "Open survey page",
-    "打开问卷页面",
-    "Судалгааны хуудсыг нээх"
+    "Mở trang chia sẻ",
+    "공유 화면 열기",
+    "Open sharing page",
+    "打开分享页面",
+    "Хуваалцах хуудсыг нээх"
   ],
   "shareOpenSurvey": [
     "Mở khảo sát",

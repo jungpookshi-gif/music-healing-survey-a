@@ -1,5 +1,5 @@
 import {fields, options} from './schema.js?v=4';
-import {text} from './i18n.js?v=14';
+import {text} from './i18n.js?v=15';
 import {validAnswer, makePayload, noStressListening, detailLimits, ageRange} from './logic.js?v=5';
 import {createPlayer} from './music.js?v=3';
 import {connectSurveyShare, loadKakaoShare, surveyInviteUrl, surveyShareSection} from './sharing.js?v=14';
