@@ -1,54 +1,32 @@
 # Music Healing · Survey A
 
-Dự án độc lập gồm **10 câu hỏi** về thói quen nghe nhạc và stress tự báo cáo, với bốn ngôn ngữ Việt, Hàn, Anh và Trung. Không có phần nghỉ, nghe nhạc thử nghiệm hoặc phiên B. Không phát nhạc nền khi trả lời. Không thay đổi mã nguồn, endpoint hoặc dữ liệu của `music-healing-dna`.
+[Survey](https://jungpookshi-gif.github.io/music-healing-survey-a/) · [Research dashboard](https://jungpookshi-gif.github.io/music-healing-survey-a/admin/) · [Participant information and invitations in four languages](materials/recruitment.md)
 
-## Câu hỏi
+This standalone adult survey contains 10 questions in Vietnamese, Korean, English and Simplified Chinese. Instrument version `music-healing-survey-a/v2` covers current age, gender, country of residence, study/paid employment, daily listening minutes, frequency of listening when stressed, genre, listening purpose, liking and overall perceived stress.
 
-| Mã | Nội dung | Kiểu trả lời |
-|---|---|---|
-| A01 | Tuổi | Số nguyên, 18–120 |
-| A02 | Giới tính | Lựa chọn, có Không trả lời |
-| A03 | Nền văn hóa / quốc gia | Lựa chọn, có Việt Nam, Hàn Quốc, Mông Cổ, Myanmar, Nepal, Khác, Không trả lời |
-| A04 | Tình trạng hiện tại | Lựa chọn, tự chọn |
-| A05 | Thời gian nghe nhạc trung bình mỗi ngày | Phút, 0–1440, tự chọn |
-| A06 | Tần suất nghe nhạc khi căng thẳng | Không bao giờ → Luôn luôn |
-| A07 | Thể loại thường nghe khi căng thẳng | Lựa chọn, có Không nghe nhạc khi stress |
-| A08 | Mục đích nghe nhạc chính | Lựa chọn, tự chọn |
-| A09 | Mức yêu thích thể loại đã chọn | Thanh kéo 0–10; có thể bỏ qua nếu A07 là Không nghe nhạc |
-| A10 | Stress tự cảm nhận trong tuần qua | Thanh kéo 0–10 |
+## Questionnaire changes
 
-Đồng ý tham gia nằm ở màn hình mở đầu, không tính là một câu trong 10 câu. Không thu họ tên/email. Điểm giữa của thanh kéo không tự động được ghi thành đáp án; điểm 0 hợp lệ. Giữ nguyên câu trả lời khi đổi ngôn ngữ. Đĩa than có nút tạm dừng và tôn trọng cài đặt giảm chuyển động.
+| Item | Research decision |
+|---|---|
+| A01, A02 | Record completed years and allow respondents to decline the gender item. |
+| A03 | Ask country of current residence. Country, nationality and cultural identity are different variables. Retain Mongolia, Myanmar and Nepal, and include China. |
+| A04 | Distinguish study only, paid work only, both, neither, and other situations. |
+| A05 | Average listening minutes over all seven days, including zero-listening days. |
+| A06 | Use a seven-day window and distinguish never listening during stress from experiencing no stress. |
+| A07, A09 | Ask one main genre during stressful moments and its liking score. If A06 is never or no stress, A07 stores the inapplicable code and A09 is missing. Changing genre clears the old rating. |
+| A08 | Ask for one main reason in the same week and offer no listening during the period. |
+| A10 | Ask for overall perceived stress in the past seven days on a single 0–10 item. |
 
-## Trạng thái thu thập dữ liệu
+## Data collection and analysis
 
-**Mặc định chưa kết nối máy chủ.** Website hiển thị rõ điều này, cho phép trải nghiệm khảo sát và tải JSON về thiết bị; không tuyên bố dữ liệu đã được gửi. Không có endpoint của dự án cũ trong mã nguồn. Câu trả lời nháp chỉ ở `sessionStorage` trong thẻ trình duyệt, được xóa sau hoàn tất. Không có analytics hoặc thư viện bên thứ ba.
+The public website starts in preview mode whenever `config.js` has an empty endpoint. The participant can complete it and download a local JSON copy. The app confirms online submission only when the collector returns the same response ID.
 
-### Kết nối một Google Sheet mới
+1. Use the dedicated private Google Sheet containing the `Responses` tab. Headers in order: `id,received_at,submitted_at,language,schema,consent,age,gender,culture,status,listen_min,stress_frequency,stress_genre,purpose,genre_like,stress_week`.
+2. For a fresh Apps Script installation, set `SHEET_ID` in `backend/Code.gs` to this sheet's ID in the private editor. Run `setup()` once with the sheet owner's account. This creates a key in the private `Admin access` tab. Keep both the sheet and script private.
+3. Deploy the collector as a web app, executing as the owner, with access appropriate to the intended participant audience. For anonymous submissions this requires the owner's approval for “Anyone.” Add the resulting `/exec` URL to `config.js`. Verify a submission against the actual sheet before recruitment.
+4. The dashboard requests aggregates with the admin key in a POST body. The browser clears the password after the request. No respondent rows are returned by the summary endpoint.
+5. For local analysis choose the `Responses` tab in Sheets and download it as CSV. Open it in the dashboard with **Open local CSV**. This works even without an online collector. Data stays in browser memory. Use **Close data** to clear the view. The dashboard reports exclusions, skips older instrument versions, and counts 0 as a score. Both dashboard modes show counts per question, group sizes, means and missing responses. The frequency comparison describes groups in a cross-sectional survey.
 
-1. Tạo một dự án mới tại Google Apps Script; sao chép `backend/Code.gs` vào đó.
-2. Chạy `setup()` một lần và cấp quyền. Hàm này tạo **Google Sheet mới**, không mở sheet của A+B. Xem URL Sheet trong Execution log. Giữ Sheet riêng tư cho nhóm nghiên cứu.
-3. Deploy → New deployment → Web app → Execute as: Me → Who has access: Anyone. Chỉ endpoint nhận câu trả lời công khai, không công khai Sheet. Endpoint này chưa có cơ chế chống spam; không cung cấp API đọc dữ liệu.
-4. Sao chép URL `/exec` của deployment mới vào `config.js`, trường `endpoint`.
-5. Thực hiện một lần gửi thử từ website đã triển khai, kiểm tra thông báo máy chủ xác nhận và đúng một dòng trong Sheet mới. Đánh dấu/xóa dòng thử trước khi thu chính thức. Thử gửi lặp cùng id để kiểm tra không nhân đôi dòng.
-6. Nếu trình duyệt hoặc chính sách tài khoản chặn phản hồi Apps Script/CORS, website báo chưa xác nhận và cho tải bản sao; **không coi fetch `no-cors` là gửi thành công**. Kiểm tra deployment trước khi thu thật.
+## Development
 
-Script kiểm tra schema, consent, kiểu số, giới hạn và giá trị enum; khóa ghi và kiểm tra UUID để không ghi trùng do thử gửi lại. Sau thay đổi Apps Script, cập nhật deployment sang phiên bản mới.
-
-## Chạy và kiểm tra
-
-Không cần build hay cài gói. Phục vụ thư mục bằng static HTTP server (không mở trực tiếp bằng file:// vì dùng ES modules). Chạy `npm test` với Node để kiểm tra 10 câu, ngôn ngữ, missing/0, giới hạn số và nhánh không nghe nhạc.
-
-GitHub Pages: Settings → Pages → Deploy from a branch → main → / (root) → Save. Mã nguồn và nội dung giao diện được công khai, không đưa dữ liệu trả lời, khóa API hay mật khẩu vào repository.
-
-## Cách diễn giải dữ liệu
-
-Đây là khảo sát cắt ngang tự báo cáo, phù hợp mô tả phân bố, khác biệt nhóm và mối liên hệ giữa việc nghe nhạc và stress. Không có đo trước/sau hoặc nhóm can thiệp nên không kết luận nhạc gây giảm stress. A10 là một câu tự đánh giá 0–10, không phải PSS-10. Không tạo “điểm sức khỏe” bằng cách cộng các câu khác đơn vị. Giữ missing khác 0, phân biệt không nghe nhạc với không trả lời, và nêu mẫu hợp lệ của từng biểu đồ.
-
-## Files
-
-- `index.html`, `style.css`, `app.js`: giao diện và điều hướng
-- `schema.js`, `i18n.js`: 10 câu hỏi và bốn ngôn ngữ
-- `logic.js`: kiểm tra và schema payload `music-healing-survey-a/v1`
-- `config.js`: endpoint riêng (để trống mặc định)
-- `backend/Code.gs`: collector Google Apps Script tùy chọn
-- `tests/survey.test.js`: kiểm tra logic
+No dependencies or build step. Serve the repository over HTTP. Run `npm test` for questionnaire, CSV and backend summary checks. GitHub Pages serves the root of `main`.

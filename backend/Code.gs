@@ -1,34 +1,104 @@
-/** Dedicated Survey A collector. Run setup() once before deploying as a web app. */
-function setup(){
-  var props=PropertiesService.getScriptProperties();
-  if(props.getProperty('SURVEY_A_SHEET_ID'))throw new Error('Already configured; keep the existing sheet.');
-  var ss=SpreadsheetApp.create('Music Healing Survey A — Responses');
-  var sheet=ss.getSheets()[0];sheet.setName('Responses');
-  sheet.appendRow(['id','received_at','submitted_at','language','schema','consent','age','gender','culture','status','listen_min','stress_frequency','stress_genre','purpose','genre_like','stress_week']);
-  sheet.setFrozenRows(1);props.setProperty('SURVEY_A_SHEET_ID',ss.getId());
-  console.log(ss.getUrl());
+// Public web app: write validated Survey A responses; read only summary counts
+// after verifying the key stored in the owner's private spreadsheet.
+// Set this to your dedicated private response spreadsheet when installing a new copy.
+const SHEET_ID = 'YOUR_SURVEY_A_SPREADSHEET_ID';
+const VERSION = 'music-healing-survey-a/v2';
+const KEYS = ['age','gender','culture','status','listen_min','stress_frequency','stress_genre','purpose','genre_like','stress_week'];
+const HEADERS = ['id','received_at','submitted_at','language','schema','consent'].concat(KEYS);
+const CHOICES = {
+  gender: ['female','male','nonbinary','other','na'],
+  culture: ['vn','kr','cn','mn','mm','np','other','na'],
+  status: ['student','work','both','neither','other'],
+  stress_frequency: ['never','rarely','sometimes','often','always','no_stress'],
+  stress_genre: ['pop','ballad','classical_piano','lofi_ambient','rock_metal','hiphop_rnb','traditional','other','none'],
+  purpose: ['destress','study_work','sleep','commute','entertain','other','none']
+};
+const LIMITS = {age:[18,120],listen_min:[0,1440],genre_like:[0,10],stress_week:[0,10]};
+
+function workbook_() { return SpreadsheetApp.openById(SHEET_ID); }
+
+function setup() {
+  const book = workbook_();
+  const responseTab = book.getSheetByName('Responses');
+  if (!responseTab || String(responseTab.getRange(1,1,1,16).getValues()[0]) !== String(HEADERS))
+    throw new Error('Expected the Survey A response headers.');
+  const properties = PropertiesService.getScriptProperties();
+  if (!properties.getProperty('ADMIN_KEY')) {
+    const key = Utilities.getUuid() + Utilities.getUuid();
+    const tab = book.getSheetByName('Admin access') || book.insertSheet('Admin access');
+    tab.getRange('A1:A3').setValues([['관리자 접속 키 / Admin access key'],[key],['https://jungpookshi-gif.github.io/music-healing-survey-a/admin/']]);
+    tab.setColumnWidth(1,590);
+    properties.setProperty('ADMIN_KEY', key);
+  }
 }
-function doGet(){return json_({ok:true,service:'music-healing-survey-a/v1'});}
-function doPost(e){
-  var lock=LockService.getScriptLock();
-  try{
-    var raw=e&&e.parameter&&e.parameter.payload;if(!raw||raw.length>12000)throw new Error('Invalid payload');
-    var data=JSON.parse(raw),a=data.answers||{};
-    if(data.schema!=='music-healing-survey-a/v1'||data.consent!==true)throw new Error('Invalid consent or schema');
-    if(!/^[0-9a-f-]{36}$/i.test(data.id||'')||!['vi','ko','en','zh'].includes(data.language)||!isFinite(Date.parse(data.submittedAt)))throw new Error('Invalid metadata');
-    var enums={gender:['female','male','nonbinary','other','na'],culture:['vn','kr','mn','mm','np','other','na'],status:['student','work','both','other'],stress_frequency:['never','rarely','sometimes','often','always'],stress_genre:['pop','ballad','classical_piano','lofi_ambient','rock_metal','hiphop_rnb','traditional','other','none'],purpose:['destress','study_work','sleep','commute','entertain','other']};
-    var required=['age','gender','culture','stress_frequency','stress_genre','stress_week'];
-    required.forEach(function(k){if(a[k]===undefined||a[k]===null||a[k]==='')throw new Error('Missing '+k);});
-    if(a.stress_genre!=='none'&&(a.genre_like===undefined||a.genre_like===null||a.genre_like===''))throw new Error('Missing genre_like');
-    Object.keys(enums).forEach(function(k){if(a[k]!==undefined&&a[k]!==null&&a[k]!==''&&!enums[k].includes(a[k]))throw new Error('Invalid '+k);});
-    var bounds={age:[18,120],listen_min:[0,1440],genre_like:[0,10],stress_week:[0,10]};
-    Object.keys(bounds).forEach(function(k){var n=a[k];if(n!==undefined&&n!==null&&n!==''&&(!Number.isInteger(n)||n<bounds[k][0]||n>bounds[k][1]))throw new Error('Invalid '+k);});
-    var sid=PropertiesService.getScriptProperties().getProperty('SURVEY_A_SHEET_ID');if(!sid)throw new Error('Collector is not configured');
-    lock.waitLock(20000);var sheet=SpreadsheetApp.openById(sid).getSheetByName('Responses');
-    if(sheet.getLastRow()>1&&sheet.getRange(2,1,sheet.getLastRow()-1,1).createTextFinder(data.id).matchEntireCell(true).findNext())return json_({ok:true,id:data.id,duplicate:true});
-    var keys=['age','gender','culture','status','listen_min','stress_frequency','stress_genre','purpose','genre_like','stress_week'];
-    sheet.appendRow([data.id,new Date().toISOString(),data.submittedAt,data.language,data.schema,true].concat(keys.map(function(k){return a[k]===undefined||a[k]===null?'':a[k];})));
-    return json_({ok:true,id:data.id});
-  }catch(error){return json_({ok:false,error:String(error.message||error)});}finally{if(lock.hasLock())lock.releaseLock();}
+function json_(value) {
+  return ContentService.createTextOutput(JSON.stringify(value)).setMimeType(ContentService.MimeType.JSON);
 }
-function json_(data){return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);}
+function doGet() { return json_({service:VERSION}); }
+function validate_(data) {
+  if (!data || data.schema !== VERSION || data.consent !== true ||
+      !['vi','ko','en','zh'].includes(data.language) ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(data.id) ||
+      typeof data.submittedAt !== 'string' || !Number.isFinite(Date.parse(data.submittedAt))) throw Error('invalid');
+  const a = data.answers;
+  if (!a || typeof a !== 'object' || Object.keys(a).some(k => !KEYS.includes(k))) throw Error('invalid');
+  const optional = ['status','listen_min','purpose'];
+  if (a.stress_genre === 'none') optional.push('genre_like');
+  for (const k of KEYS) {
+    if (a[k] === null || a[k] === undefined) {
+      if (!optional.includes(k)) throw Error('missing');
+      continue;
+    }
+    if (CHOICES[k] && !CHOICES[k].includes(a[k])) throw Error('choice');
+    if (LIMITS[k] && (!Number.isInteger(a[k]) || a[k]<LIMITS[k][0] || a[k]>LIMITS[k][1])) throw Error('range');
+  }
+  if (['never','no_stress'].includes(a.stress_frequency) !== (a.stress_genre === 'none') ||
+      (a.stress_genre === 'none' && a.genre_like != null)) throw Error('inapplicable');
+}
+
+function store_(data) {
+  validate_(data);
+  const lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+    const tab = workbook_().getSheetByName('Responses');
+    const last = tab.getLastRow();
+    if (last > 1 && tab.getRange(2,1,last-1,1).createTextFinder(data.id).matchEntireCell(true).findNext())
+      return {ok:true,id:data.id};
+    const values = KEYS.map(k => data.answers[k] == null ? '' : data.answers[k]);
+    tab.appendRow([data.id,new Date().toISOString(),new Date(data.submittedAt).toISOString(),data.language,VERSION,true].concat(values));
+    SpreadsheetApp.flush();
+    return {ok:true,id:data.id};
+  } finally { lock.releaseLock(); }
+}
+
+function summarize_(key) {
+  const expected = PropertiesService.getScriptProperties().getProperty('ADMIN_KEY');
+  if (!expected || key !== expected) return {ok:false,error:'access'};
+  const tab = workbook_().getSheetByName('Responses');
+  const rows = tab.getDataRange().getValues().slice(1).filter(row => row[4] === VERSION && row[5] === true);
+  const counts = {};
+  for (const k of KEYS) counts[k] = {};
+  const stressByFrequency = {};
+  for (const row of rows) {
+    for (let j=0;j<KEYS.length;j++) {
+      const value = row[6+j], column = counts[KEYS[j]];
+      if (value !== '' && value != null) column[value] = (column[value] || 0)+1;
+    }
+    const freq = row[11], stress = row[15];
+    if (Number.isInteger(stress)) {
+      const group = stressByFrequency[freq] || {n:0,sum:0};
+      group.n++; group.sum+=stress; stressByFrequency[freq]=group;
+    }
+  }
+  return {ok:true,total:rows.length,counts:counts,stressByFrequency:stressByFrequency};
+}
+function doPost(e) {
+  try {
+    if (!e || !e.parameter) return json_({ok:false,error:'request'});
+    if (e.parameter.action === 'summary') return json_(summarize_(e.parameter.key));
+    const raw = e.parameter.payload;
+    if (!raw || raw.length>8000) return json_({ok:false,error:'size'});
+    return json_(store_(JSON.parse(raw)));
+  } catch (_) { return json_({ok:false,error:'request'}); }
+}
