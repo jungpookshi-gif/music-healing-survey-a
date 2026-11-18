@@ -30,45 +30,21 @@ export function loadKakaoShare(key, browser = window) {
 }
 
 export function connectSurveyShare(section, url, t, {device = navigator, kakao = null} = {}) {
-  const share = section.querySelector('#share-survey');
-  const platforms = section.querySelector('#share-platforms');
-  const alternatives = section.querySelector('#share-platform-options');
-  const hint = section.querySelector('#share-device-hint');
   const kakaoButton = section.querySelector('#share-kakao');
+  const messengerButton = section.querySelector('#share-messenger');
   const status = section.querySelector('#share-status');
-  const supportsNative = typeof device.share === 'function';
 
-  const facebook = new URL('https://www.facebook.com/sharer/sharer.php');
-  facebook.searchParams.set('u', url);
-  section.querySelector('#share-facebook').href = facebook.href;
-  const message = encodeURIComponent(url);
-  section.querySelector('#share-whatsapp').href = 'https://wa.me/?text=' + message;
-  section.querySelector('#share-line').href = 'https://line.me/R/share?text=' + message;
-  alternatives.hidden = !supportsNative;
-  hint.hidden = !supportsNative;
-
-  function showPlatforms() {
-    platforms.hidden = false;
-    share.setAttribute('aria-expanded', 'true');
-    alternatives.setAttribute('aria-expanded', 'true');
-  }
-
-  async function shareWithDevice(unavailableMessage, prompt = '') {
-    status.textContent = prompt;
-    if (supportsNative) {
-      try {
-        await device.share({url});
-        return;
-      } catch (error) {
-        if (error?.name === 'AbortError') {
-          status.textContent = '';
-          showPlatforms();
-          return;
-        }
-      }
+  async function shareWithDevice(prompt) {
+    if (typeof device.share !== 'function') {
+      status.textContent = t('shareAppsUnavailable');
+      return;
     }
-    showPlatforms();
-    status.textContent = t(unavailableMessage);
+    status.textContent = t(prompt);
+    try {
+      await device.share({url});
+    } catch (error) {
+      status.textContent = error?.name === 'AbortError' ? '' : t('shareAppsUnavailable');
+    }
   }
 
   let kakaoShare = null;
@@ -84,9 +60,8 @@ export function connectSurveyShare(section, url, t, {device = navigator, kakao =
         // Keep device sharing available if the SDK cannot open its picker.
       }
     }
-    await shareWithDevice('shareKakaoUnavailable', supportsNative ? t('shareKakaoChoose') : '');
+    await shareWithDevice('shareKakaoChoose');
   };
 
-  alternatives.onclick = showPlatforms;
-  share.onclick = () => shareWithDevice('shareAppsUnavailable');
+  messengerButton.onclick = () => shareWithDevice('shareMessengerChoose');
 }

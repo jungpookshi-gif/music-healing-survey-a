@@ -25,15 +25,10 @@
 
 .survey-share{margin-top:28px;padding-top:23px;border-top:1px solid var(--line)}
 .survey-share h2{margin:0 0 14px;font-size:21px}
-#share-device-hint{margin:0 0 12px;font-size:14px}
-.share-platforms{margin-top:14px}
-.share-platforms p{margin:0 0 10px;font-size:14px}
 .share-actions{display:flex;justify-content:center;flex-wrap:wrap;gap:8px}
-.share-actions :is(button,a):not([hidden]){display:inline-flex;align-items:center;justify-content:center;min-height:44px;flex:0 1 auto;padding:9px 14px;font-size:14px;text-decoration:none}
-.share-actions .secondary{background:#fff}
+.share-actions button{min-height:44px;padding:9px 14px;font-size:14px;background:#fff}
 #share-status{margin:0;font-size:13px}
 #share-status:not(:empty){margin-top:10px}
 @media(max-width:600px){
-  #share-survey{width:100%}
-  .share-platforms .share-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .share-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
 }

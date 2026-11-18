@@ -16,33 +16,24 @@ test('the invitation link opens a fresh survey with only the chosen language', (
 });
 
 function shareControls() {
-  const toggle = () => ({hidden:true,setAttribute(name,value){this[name]=value;}});
   const nodes = {
-    '#share-survey': toggle(), '#share-platform-options': toggle(),
-    '#share-platforms': {hidden:true}, '#share-device-hint': {hidden:true},
-    '#share-kakao': {}, '#share-facebook': {}, '#share-whatsapp': {}, '#share-line': {}, '#share-status': {}
+    '#share-kakao': {}, '#share-messenger': {}, '#share-status': {}
   };
   return {nodes, section:{querySelector:selector=>nodes[selector]}};
 }
 
-test('the share button calls the system picker immediately with only the public URL', async () => {
+test('Messenger calls the system picker immediately with only the public URL', async () => {
   const {nodes,section}=shareControls();
   const url='https://example.test/survey/?lang=vi';
   let shared;
   connectSurveyShare(section,url,key=>key,{device:{share:async data=>{shared=data;}}});
-  assert.equal(nodes['#share-platforms'].hidden,true);
-  assert.equal(nodes['#share-device-hint'].hidden,false);
-  assert.equal(nodes['#share-platform-options'].hidden,false);
-  const sharing=nodes['#share-survey'].onclick();
+  const sharing=nodes['#share-messenger'].onclick();
   assert.deepEqual(shared,{url});
   await sharing;
-  assert.equal(nodes['#share-platforms'].hidden,true);
-  nodes['#share-platform-options'].onclick();
-  assert.equal(nodes['#share-platforms'].hidden,false);
-  assert.equal(nodes['#share-platform-options']['aria-expanded'],'true');
+  assert.equal(nodes['#share-status'].textContent,'shareMessengerChoose');
 });
 
-test('chat platform links work even when a device share picker is unavailable', async () => {
+test('both buttons give browser sharing instructions when the system picker is unavailable', async () => {
   const url='https://example.test/survey/?lang=ko';
   const clipboard={writeText(){assert.fail('Sharing must never copy');}};
   for (const device of [
@@ -51,31 +42,19 @@ test('chat platform links work even when a device share picker is unavailable', 
   ]) {
     const {nodes,section}=shareControls();
     connectSurveyShare(section,url,key=>key,{device});
-    await nodes['#share-survey'].onclick();
-    assert.equal(nodes['#share-platforms'].hidden,false);
-    assert.equal(nodes['#share-survey']['aria-expanded'],'true');
+    await nodes['#share-messenger'].onclick();
     assert.equal(nodes['#share-status'].textContent,'shareAppsUnavailable');
     await nodes['#share-kakao'].onclick();
-    assert.equal(nodes['#share-status'].textContent,'shareKakaoUnavailable');
-    const facebook=new URL(nodes['#share-facebook'].href);
-    assert.equal(facebook.origin+facebook.pathname,'https://www.facebook.com/sharer/sharer.php');
-    assert.equal(facebook.searchParams.get('u'),url);
-    const whatsapp=new URL(nodes['#share-whatsapp'].href);
-    assert.equal(whatsapp.origin,'https://wa.me');
-    assert.equal(whatsapp.searchParams.get('text'),url);
-    const line=new URL(nodes['#share-line'].href);
-    assert.equal(line.origin+line.pathname,'https://line.me/R/share');
-    assert.equal(line.searchParams.get('text'),url);
+    assert.equal(nodes['#share-status'].textContent,'shareAppsUnavailable');
   }
 });
 
-test('dismissing the phone share menu keeps platform alternatives available without an error', async () => {
+test('dismissing the phone share menu clears the sharing prompt', async () => {
   const {nodes,section}=shareControls();
   connectSurveyShare(section,'https://example.test/survey/',key=>key,{
     device:{share:async()=>{throw new DOMException('Cancelled','AbortError');}}
   });
-  await nodes['#share-survey'].onclick();
-  assert.equal(nodes['#share-platforms'].hidden,false);
+  await nodes['#share-messenger'].onclick();
   assert.equal(nodes['#share-status'].textContent,'');
 });
 
@@ -108,7 +87,6 @@ test('configured Kakao SDK passes the public URL to the KakaoTalk recipient pick
   assert.equal(script.crossOrigin,'anonymous');
   script.onload();
   await kakao;
-  await nodes['#share-survey'].onclick();
   await nodes['#share-kakao'].onclick();
   assert.equal(key,'browser-test-key');
   assert.deepEqual(request,{requestUrl:url});

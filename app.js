@@ -1,8 +1,8 @@
 import {fields, options} from './schema.js?v=3';
-import {text} from './i18n.js?v=11';
+import {text} from './i18n.js?v=12';
 import {validAnswer, makePayload, noStressListening, detailLimits, ageRange} from './logic.js?v=4';
 import {createPlayer} from './music.js?v=3';
-import {connectSurveyShare, loadKakaoShare, surveyInviteUrl} from './sharing.js?v=11';
+import {connectSurveyShare, loadKakaoShare, surveyInviteUrl} from './sharing.js?v=12';
 
 const languages = ['vi', 'ko', 'en', 'zh', 'mn'];
 const draftKey = 'mhs-a-v2';
@@ -364,19 +364,9 @@ function download() {
 function shareSection() {
   return `<section class="survey-share" aria-labelledby="share-title">
     <h2 id="share-title">${t('shareHeading')}</h2>
-    <p id="share-device-hint" hidden>${t('shareDeviceHint')}</p>
     <div class="share-actions">
-      <button class="primary" type="button" id="share-survey" aria-expanded="false" aria-controls="share-platforms">${t('shareSurvey')}</button>
-      <button class="secondary" type="button" id="share-platform-options" aria-expanded="false" aria-controls="share-platforms" hidden>${t('sharePlatformOptions')}</button>
-    </div>
-    <div class="share-platforms" id="share-platforms" hidden>
-      <p>${t('chooseShareApp')}</p>
-      <div class="share-actions">
-        <button class="secondary" type="button" id="share-kakao">KakaoTalk</button>
-        <a class="secondary" id="share-whatsapp" rel="noreferrer">WhatsApp</a>
-        <a class="secondary" id="share-line" rel="noreferrer">LINE</a>
-        <a class="secondary" id="share-facebook" rel="noreferrer">Facebook</a>
-      </div>
+      <button class="secondary" type="button" id="share-kakao">KakaoTalk</button>
+      <button class="secondary" type="button" id="share-messenger">Facebook Messenger</button>
     </div>
     <p id="share-status" role="status"></p>
   </section>`;
