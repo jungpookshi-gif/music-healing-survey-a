@@ -13,7 +13,7 @@ export function surveyShareSection(t, selectedApp = '') {
     </div>
     <p id="share-status" role="status"></p>
     <div id="share-browser-links" hidden>
-      <a id="share-open-chrome" class="secondary" target="_blank" rel="noopener" hidden>${t('shareOpenChrome')}</a>
+      <a id="share-open-chrome" class="secondary" hidden>${t('shareOpenChrome')}</a>
       <a id="share-open-browser" class="secondary" target="_blank" rel="noopener">${t('shareOpenPage')}</a>
     </div>
   </section>`;

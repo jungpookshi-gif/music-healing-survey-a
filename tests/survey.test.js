@@ -63,6 +63,10 @@ test('blocked sharing offers a separate page that remembers the selected app and
 });
 
 test('Android recovery opens Chrome using a fallback with only the language and selected app', async () => {
+  const markup=surveyShareSection(key=>key);
+  const chromeLink=markup.match(/<a id="share-open-chrome"[^>]*>/)?.[0];
+  assert.ok(chromeLink);
+  assert.doesNotMatch(chromeLink,/\btarget=/);
   const {nodes,section}=shareControls();
   const url='https://example.test/survey/?lang=vi&response=private#done';
   connectSurveyShare(section,url,key=>key,{device:{userAgent:'Mozilla/5.0 (Linux; Android 14)'}});
