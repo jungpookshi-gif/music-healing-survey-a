@@ -1,5 +1,5 @@
 import {fields,options} from '../schema.js';
-import {VERSION,validAnswer,previousMaxAge} from '../logic.js';
+import {VERSION,validAnswer,previousMaxAge} from '../logic.js?v=4';
 
 export function emptySummary() {
   return {ok:true,total:0,counts:Object.fromEntries(fields.map(f=>[f.key,{}])),stressByFrequency:{}};

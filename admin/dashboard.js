@@ -1,5 +1,5 @@
 import {fields,options} from '../schema.js';
-import {fromCsv,mean,barsFor} from './analysis.js';
+import {fromCsv,mean,barsFor} from './analysis.js?v=4';
 import {words,shortNames} from './labels.js';
 
 const languages=['vi','ko','en','zh'];
