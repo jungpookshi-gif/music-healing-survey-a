@@ -51,28 +51,31 @@ export function connectSurveyShare(section, url, t, {device = navigator, kakao =
   const browserLinks = section.querySelector('#share-browser-links');
   const openChrome = section.querySelector('#share-open-chrome');
   const openBrowser = section.querySelector('#share-open-browser');
+  const sharePage = new URL('share.html', url);
+  const language = new URL(url).searchParams.get('lang');
+  if (language) sharePage.searchParams.set('lang', language);
 
-  function showBrowserHelp(app) {
-    if (!offerBrowser) {
-      status.textContent = t('shareAppsUnavailable');
-      return;
-    }
-    const link = new URL('share.html', url);
-    const language = new URL(url).searchParams.get('lang');
-    if (language) link.searchParams.set('lang', language);
-    link.searchParams.set('app', app);
-    const opensChrome = link.protocol === 'https:' && /\bAndroid\b/i.test(device.userAgent ?? '');
+  function updateBrowserLinks(app) {
+    const link = new URL(sharePage);
+    if (app) link.searchParams.set('app', app);
+    const opensChrome = Boolean(app) && link.protocol === 'https:' && /\bAndroid\b/i.test(device.userAgent ?? '');
     openBrowser.href = link.href;
     openChrome.hidden = !opensChrome;
     if (opensChrome) {
       openChrome.href = `intent://${link.host}${link.pathname}${link.search}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(link.href)};end`;
     }
-    status.textContent = t('shareBrowserHelp');
     browserLinks.hidden = false;
   }
 
+  function showBrowserHelp(app) {
+    if (offerBrowser) updateBrowserLinks(app);
+    status.textContent = t(offerBrowser ? 'shareBrowserHelp' : 'shareAppsUnavailable');
+  }
+
+  if (offerBrowser) updateBrowserLinks();
+
   async function shareWithDevice(app, prompt) {
-    browserLinks.hidden = true;
+    if (offerBrowser) updateBrowserLinks();
     if (typeof device.share !== 'function') {
       showBrowserHelp(app);
       return;
@@ -91,9 +94,9 @@ export function connectSurveyShare(section, url, t, {device = navigator, kakao =
 
   kakaoButton.onclick = async () => {
     status.textContent = '';
-    browserLinks.hidden = true;
     if (kakaoShare) {
       try {
+        if (offerBrowser) updateBrowserLinks();
         await kakaoShare(url);
         return;
       } catch {

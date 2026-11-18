@@ -1,5 +1,5 @@
 import {text} from './i18n.js?v=13';
-import {connectSurveyShare, loadKakaoShare, surveyInviteUrl, surveyShareSection} from './sharing.js?v=13';
+import {connectSurveyShare, loadKakaoShare, surveyInviteUrl, surveyShareSection} from './sharing.js?v=14';
 
 const languages = ['vi', 'ko', 'en', 'zh', 'mn'];
 const params = new URL(location.href).searchParams;

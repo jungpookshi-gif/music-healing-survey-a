@@ -23,6 +23,14 @@ function shareControls() {
   return {nodes, section:{querySelector:selector=>nodes[selector]}};
 }
 
+test('the completion screen offers the sharing page before the participant presses an app button', () => {
+  const {nodes,section}=shareControls();
+  connectSurveyShare(section,'https://example.test/survey/?lang=mn',key=>key,{device:{}});
+  assert.equal(nodes['#share-browser-links'].hidden,false);
+  assert.equal(nodes['#share-open-browser'].href,'https://example.test/survey/share.html?lang=mn');
+  assert.equal(nodes['#share-open-chrome'].hidden,true);
+});
+
 test('Messenger calls the system picker immediately with only the public URL', async () => {
   const {nodes,section}=shareControls();
   const url='https://example.test/survey/?lang=vi';
@@ -84,7 +92,7 @@ test('dismissing the phone share menu clears the sharing prompt', async () => {
   });
   await nodes['#share-messenger'].onclick();
   assert.equal(nodes['#share-status'].textContent,'');
-  assert.equal(nodes['#share-browser-links'].hidden,true);
+  assert.equal(nodes['#share-browser-links'].hidden,false);
 });
 
 test('KakaoTalk uses the device picker when the SDK is not configured', async () => {

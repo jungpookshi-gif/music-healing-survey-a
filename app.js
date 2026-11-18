@@ -2,7 +2,7 @@ import {fields, options} from './schema.js?v=3';
 import {text} from './i18n.js?v=13';
 import {validAnswer, makePayload, noStressListening, detailLimits, ageRange} from './logic.js?v=4';
 import {createPlayer} from './music.js?v=3';
-import {connectSurveyShare, loadKakaoShare, surveyInviteUrl, surveyShareSection} from './sharing.js?v=13';
+import {connectSurveyShare, loadKakaoShare, surveyInviteUrl, surveyShareSection} from './sharing.js?v=14';
 
 const languages = ['vi', 'ko', 'en', 'zh', 'mn'];
 const draftKey = 'mhs-a-v2';
