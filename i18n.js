@@ -237,6 +237,13 @@ export const text = {
     "18至65周岁。",
     "18-аас 65 хүртэлх нас."
   ],
+  "typedAdvanceHint": [
+    "Sau khi nhập số hợp lệ, khảo sát sẽ tự chuyển câu.",
+    "유효한 숫자를 입력한 뒤 잠시 기다리면 다음 문항으로 넘어갑니다.",
+    "The survey moves on shortly after you enter a valid number.",
+    "输入有效数字后，问卷会自动进入下一题。",
+    "Зөв тоо оруулсны дараа судалгаа автоматаар дараагийн асуултад шилжинэ."
+  ],
   "listenHint": [
     "0–1440 phút/ngày.",
     "하루 0–1440분",

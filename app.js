@@ -1,5 +1,5 @@
 import {fields, options} from './schema.js?v=3';
-import {text} from './i18n.js?v=8';
+import {text} from './i18n.js?v=9';
 import {validAnswer, makePayload, noStressListening, detailLimits, ageRange} from './logic.js?v=4';
 import {createPlayer} from './music.js?v=3';
 import {connectSurveyShare, loadKakaoShare, surveyInviteUrl} from './sharing.js?v=8';
@@ -8,6 +8,7 @@ const languages = ['vi', 'ko', 'en', 'zh', 'mn'];
 const draftKey = 'mhs-a-v2';
 const finalStep = fields.length;
 const doneStep = finalStep + 1;
+const typedAdvanceDelay = 1200;
 const config = window.SURVEY_CONFIG || {};
 const endpoint = /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(config.endpoint ?? '') ? config.endpoint : '';
 const coverImage = typeof config.coverImage === 'string' ? config.coverImage : '';
@@ -79,12 +80,21 @@ function show(nextStep) {
   }
 }
 
-function queueAdvance() {
+function queueAdvance(delay = 220) {
   clearTimeout(nextTimer);
   const current = step;
   nextTimer = setTimeout(() => {
     if (step === current) nextQuestion();
-  }, 220);
+  }, delay);
+}
+
+function queueTypedAdvance(field, event) {
+  if (event.isComposing || event.target.value === '' || !validAnswer(field, answers)) {
+    clearTimeout(nextTimer);
+    return;
+  }
+  app.querySelector('#error').textContent = '';
+  queueAdvance(typedAdvanceDelay);
 }
 
 function render() {
@@ -147,11 +157,16 @@ function renderQuestion() {
     renderChoices(control, field, value);
   } else if (field.type === 'number') {
     const age = field.key === 'age';
-    control.innerHTML = `<input id="answer" aria-labelledby="question" type="number" inputmode="numeric"
-      min="${age ? ageRange.min : 0}" max="${age ? ageRange.max : 1440}" step="1" value="${esc(value ?? '')}">
-      <p class="help">${t(age ? 'ageHint' : 'listenHint')}</p>`;
+    control.innerHTML = `<input id="answer" aria-labelledby="question" aria-describedby="number-hint" type="number"
+      inputmode="numeric" enterkeyhint="next" min="${age ? ageRange.min : 0}" max="${age ? ageRange.max : 1440}"
+      step="1" value="${esc(value ?? '')}">
+      <p class="help" id="number-hint">${t(age ? 'ageHint' : 'listenHint')} ${t('typedAdvanceHint')}</p>`;
     const input = control.querySelector('input');
-    input.oninput = () => setAnswer(field.key, input.value === '' ? null : Number(input.value));
+    input.oninput = event => {
+      setAnswer(field.key, input.value === '' ? null : Number(input.value));
+      queueTypedAdvance(field, event);
+    };
+    input.onblur = () => clearTimeout(nextTimer);
     input.onkeydown = confirmOnEnter;
   } else {
     renderScale(control, field, value);
@@ -200,8 +215,9 @@ function renderScale(control, field, value) {
       aria-labelledby="question" aria-valuetext="${esc(selected ? value : t('unanswered'))}">
     <div class="ticks">${Array.from({length: 11}, (_, i) => `<span>${i}</span>`).join('')}</div>
     <div class="endpoints"><span>${t(like ? 'lowlike' : 'lowstress')}</span><span>${t(like ? 'highlike' : 'highstress')}</span></div>
-    <input id="numeric" type="number" min="0" max="10" step="1" inputmode="numeric" aria-labelledby="question" value="${esc(value ?? '')}">
-    <p class="help">${t('scalehelp')}</p>`;
+    <input id="numeric" type="number" min="0" max="10" step="1" inputmode="numeric" enterkeyhint="next"
+      aria-labelledby="question" aria-describedby="scale-hint" value="${esc(value ?? '')}">
+    <p class="help" id="scale-hint">${t('scalehelp')} ${t('typedAdvanceHint')}</p>`;
   const range = control.querySelector('#range');
   const numeric = control.querySelector('#numeric');
   const rating = control.querySelector('#rating');
@@ -219,10 +235,12 @@ function renderScale(control, field, value) {
     queueAdvance();
   };
   range.onkeydown = numeric.onkeydown = confirmOnEnter;
-  numeric.oninput = () => {
+  numeric.onblur = () => clearTimeout(nextTimer);
+  numeric.oninput = event => {
     const score = numeric.value === '' ? null : Number(numeric.value);
     select(score);
     if (score !== null && score >= 0 && score <= 10) range.value = score;
+    queueTypedAdvance(field, event);
   };
 }
 
@@ -247,7 +265,7 @@ function renderDetails() {
     <p class="help" id="details-hint">${t('detailsHint')}</p>
     <div class="details-field">
       <label for="participant-name">${t('name')} <span class="badge">${t('optional')}</span></label>
-      <input id="participant-name" name="participant_name" type="text" maxlength="${detailLimits.participant_name}"
+      <input id="participant-name" name="participant_name" type="text" enterkeyhint="next" maxlength="${detailLimits.participant_name}"
         aria-describedby="details-hint" value="${esc(details.participant_name ?? '')}" ${locked ? 'readonly' : ''}>
     </div>
     <div class="details-field">
@@ -264,6 +282,13 @@ function renderDetails() {
     ${failed ? `<button id="backup" type="button" class="quiet">${t('download')}</button>` : ''}
   </form>`;
   const form = app.querySelector('#details');
+  if (!locked) {
+    form.querySelector('#participant-name').onkeydown = event => {
+      if (event.key !== 'Enter' || event.isComposing) return;
+      event.preventDefault();
+      form.querySelector('#survey-feedback').focus();
+    };
+  }
   form.oninput = event => {
     details[event.target.name] = event.target.value;
     remember();

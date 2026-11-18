@@ -29,7 +29,7 @@ The public website starts in preview mode whenever `config.js` has an empty endp
 
 ## Participant experience
 
-Single-choice answers advance after a confirmed selection. Scales advance when the pointer is released. For typed numbers, press Enter or Next to finish entering the value. The last page contains the optional name and feedback and requires an explicit submission.
+Single-choice answers advance after a confirmed selection. Scales advance when the pointer is released. A valid typed number advances after a brief pause in typing. Enter or Next can also advance immediately. The last page contains the optional name and feedback and requires an explicit submission. Enter in the name field moves focus to feedback.
 
 **Still Harbor** is an original 69-second instrumental loop with soft keys and sustained tones. It starts at 20% player volume after the participant clicks Start and stops at completion. Participants can independently pause playback, adjust volume, or suspend vinyl motion. Music during completion of the questionnaire is a change in survey conditions to consider when comparing responses across rollout dates.
 
