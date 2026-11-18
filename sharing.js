@@ -10,30 +10,40 @@ export function connectSurveyShare(section, url, t, device = navigator) {
   const status = section.querySelector('#share-status');
   const manual = section.querySelector('#survey-link-wrap');
   const link = section.querySelector('#survey-link');
-  const invitation = {title: t('shareTitle'), text: t('inviteText'), url};
-
   link.value = url;
-  share.hidden = typeof device.share !== 'function' ||
-    (typeof device.canShare === 'function' && !device.canShare(invitation));
+
+  function copyBySelection() {
+    manual.hidden = false;
+    link.focus();
+    link.select();
+    try {
+      return section.ownerDocument?.execCommand?.('copy') === true;
+    } catch {
+      return false;
+    }
+  }
+
+  async function copyLink() {
+    let copied = false;
+    try {
+      await device.clipboard.writeText(url);
+      copied = true;
+    } catch {
+      copied = copyBySelection();
+    }
+    status.textContent = t(copied ? 'linkCopied' : 'copyManually');
+  }
 
   share.onclick = async () => {
     status.textContent = '';
+    if (typeof device.share !== 'function') return copyLink();
     try {
-      await device.share(invitation);
-    } catch (error) {
-      if (error?.name !== 'AbortError') status.textContent = t('shareUseCopy');
-    }
-  };
-
-  copy.onclick = async () => {
-    try {
-      await device.clipboard.writeText(url);
-      status.textContent = t('linkCopied');
+      await device.share({url});
     } catch {
+      // In-app browsers can expose share() but block it or have no targets.
       manual.hidden = false;
-      link.focus();
-      link.select();
-      status.textContent = t('copyManually');
+      status.textContent = t('shareUseCopy');
     }
   };
+  copy.onclick = copyLink;
 }

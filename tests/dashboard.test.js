@@ -95,3 +95,56 @@ test('collector preserves old rows and stores optional details once, outside agg
  assert.equal(summary.counts.participant_name,undefined);
  assert.equal(summary.counts.feedback,undefined);
 });
+
+test('administrator dashboard requires a successful server password check and locks on sign-out', async t => {
+ const elements = new Map();
+ const makeElement = () => ({
+   hidden:false, inert:false, value:'', textContent:'', style:{}, children:[],
+   append(...children){ this.children.push(...children); },
+   replaceChildren(...children){ this.children=children; },
+   setAttribute(){}, focus(){ this.focused=true; }
+ });
+ const element = id => {
+   if(!elements.has(id)) elements.set(id,makeElement());
+   return elements.get(id);
+ };
+ const environment = {
+   document:{documentElement:{},getElementById:element,createElement:makeElement,querySelectorAll:()=>[]},
+   location:{href:'https://example.test/admin/?lang=en'},
+   window:{SURVEY_CONFIG:{endpoint:'https://script.google.com/macros/s/fixture/exec'},addEventListener(){}},
+   fetch:async (_url,{body}) => {
+     assert.equal(body.get('action'),'summary');
+     const valid = body.get('key')==='test-password';
+     const result = valid ? fromCsv(header+'\n'+sample).summary : {ok:false,error:'access'};
+     return {ok:true,json:async()=>result};
+   }
+ };
+ for(const [key,value] of Object.entries(environment)) {
+   const original=Object.getOwnPropertyDescriptor(globalThis,key);
+   Object.defineProperty(globalThis,key,{configurable:true,writable:true,value});
+   t.after(()=>original?Object.defineProperty(globalThis,key,original):delete globalThis[key]);
+ }
+ await import('../admin/dashboard.js');
+ assert.equal(element('dashboard').hidden,true);
+ assert.equal(element('dashboard').inert,true);
+ assert.equal(element('kpis').children.length,0);
+ assert.equal(element('login-panel').hidden,false);
+ await element('csv').onchange({target:{files:[{text(){assert.fail('CSV processing is locked before login');}}]}});
+ const submit = key => {
+   element('key').value=key;
+   return element('login').onsubmit({preventDefault(){}});
+ };
+ await submit('wrong');
+ assert.equal(element('dashboard').hidden,true);
+ assert.equal(element('login-status').textContent,'Incorrect administrator password.');
+ assert.equal(element('key').value,'');
+ await submit('test-password');
+ assert.equal(element('dashboard').hidden,false);
+ assert.equal(element('dashboard').inert,false);
+ assert.equal(element('login-panel').hidden,true);
+ assert.equal(element('kpis').children.length,3);
+ assert.equal(element('key').value,'');
+ element('sign-out').onclick();
+ assert.equal(element('dashboard').hidden,true);
+ assert.equal(element('kpis').children.length,0);
+});

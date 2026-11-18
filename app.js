@@ -1,8 +1,8 @@
 import {fields, options} from './schema.js?v=3';
-import {text} from './i18n.js?v=5';
+import {text} from './i18n.js?v=6';
 import {validAnswer, makePayload, noStressListening, detailLimits, ageRange} from './logic.js?v=4';
 import {createPlayer} from './music.js?v=3';
-import {connectSurveyShare, surveyInviteUrl} from './sharing.js?v=5';
+import {connectSurveyShare, surveyInviteUrl} from './sharing.js?v=6';
 
 const languages = ['vi', 'ko', 'en', 'zh', 'mn'];
 const draftKey = 'mhs-a-v2';
@@ -93,9 +93,6 @@ function render() {
   document.querySelectorAll('[data-lang]').forEach(button => {
     button.setAttribute('aria-pressed', String(button.dataset.lang === lang));
   });
-  const research = document.querySelector('#research-link');
-  research.textContent = t('research');
-  research.href = './admin/?lang=' + (lang === 'mn' ? 'en' : lang);
   document.querySelector('#question-count').textContent = t('footer');
   motion.textContent = t(paused ? 'resume' : 'motion');
   art.hidden = motion.hidden = step === doneStep;
@@ -344,12 +341,12 @@ function shareSection() {
     <h2 id="share-title">${t('shareHeading')}</h2>
     <p id="share-help">${t('shareHelp')}</p>
     <div class="share-actions">
-      <button class="primary" type="button" id="share-survey" aria-describedby="share-help" hidden>${t('shareSurvey')}</button>
+      <button class="primary" type="button" id="share-survey" aria-describedby="share-help">${t('shareSurvey')}</button>
       <button class="secondary" type="button" id="copy-survey-link">${t('copyLink')}</button>
     </div>
     <div id="survey-link-wrap" hidden>
       <label for="survey-link">${t('surveyLink')}</label>
-      <input id="survey-link" type="url" readonly>
+      <input id="survey-link" type="text" inputmode="url" readonly>
     </div>
     <p id="share-status" role="status"></p>
   </section>`;

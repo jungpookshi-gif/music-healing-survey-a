@@ -1,11 +1,11 @@
 import {fields,options} from '../schema.js';
 import {fromCsv,mean,barsFor} from './analysis.js?v=4';
-import {words,shortNames} from './labels.js';
+import {words,shortNames} from './labels.js?v=6';
 
 const languages=['vi','ko','en','zh'];
 const query=new URL(location.href);
 let lang=languages.includes(query.searchParams.get('lang'))?query.searchParams.get('lang'):'vi';
-let summary=null, source='', excluded=0, status='', sequence=0;
+let onlineSummary=null, summary=null, source='', excluded=0, status='', sequence=0;
 const configured=window.SURVEY_CONFIG?.endpoint || '';
 const endpoint=/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(configured)?configured:'';
 const el=id=>document.getElementById(id);
@@ -55,13 +55,27 @@ function questionCard(field,i) {
 function render() {
   document.documentElement.lang=lang;
   document.title=t('workspace')+' · Survey A';
-  for(const id of ['workspace','title','sub','connect','private','overall','clear','online']) el(id).textContent=t(id);
-  el('key-label').textContent=t('key');el('file-label').textContent=t('file');
-  el('connection-info').textContent=t(endpoint?'help':'pending');
-  el('online').disabled=!endpoint||status==='loading';el('key').disabled=!endpoint;
-  el('clear').hidden=!summary && status!=='loading';
-  el('status').textContent=status?t(status):source?t(source)+(source==='local'?' · '+t('omitted')+' '+excluded:''):t('closed');
+  const signedIn = onlineSummary !== null;
+  el('login-panel').hidden=signedIn;
+  el('dashboard').hidden=!signedIn;
+  el('dashboard').inert=!signedIn;
+  el('sign-in-title').textContent=t('signIn');
+  el('key-label').textContent=t('key');
+  el('online').textContent=t('online');
+  el('online').disabled=!endpoint||status==='loading';
+  el('key').disabled=!endpoint||status==='loading';
+  el('key').setAttribute('aria-invalid',String(status==='badPassword'));
+  el('login-status').textContent=signedIn?'':!endpoint?t('pending'):status?t(status):'';
   document.querySelectorAll('[data-lang]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.lang===lang)));
+  if (!signedIn) {
+    for (const id of ['kpis','relation','sections']) el(id).replaceChildren();
+    return;
+  }
+  for (const id of ['workspace','title','sub','connect','private','overall','clear']) el(id).textContent=t(id);
+  el('sign-out').textContent=t('signOut');
+  el('file-label').textContent=t('file');
+  el('clear').hidden=source!=='local';
+  el('status').textContent=status?t(status):t(source)+(source==='local'?' · '+t('omitted')+' '+excluded:'');
   const kpis=el('kpis');kpis.replaceChildren();
   for(const [id,value] of [['total',summary?.total],['stress',summary?mean(summary.counts.stress_week):null],['minutes',summary?mean(summary.counts.listen_min):null]]) {
     const box=node('div',null,'kpi');
@@ -83,34 +97,78 @@ function render() {
     sections.append(node('h2',t(label),'section-title'),grid);
   }
 }
-function reset() {
-  sequence++;summary=null;source='';excluded=0;status='';el('csv').value='';el('key').value='';render();
+function setOnlineView() {
+  summary=onlineSummary;source='live';excluded=0;status='';
+  el('csv').value='';
 }
-el('clear').onclick=reset;
+
+function lock() {
+  sequence++;
+  onlineSummary=null;
+  setOnlineView();
+  el('key').value='';
+  render();
+}
+
+el('sign-out').onclick=()=>{
+  lock();
+  el('key').focus();
+};
+window.addEventListener('pagehide',lock);
+
+el('clear').onclick=()=>{
+  sequence++;
+  setOnlineView();
+  render();
+};
+
 el('login').onsubmit=async event=>{
   event.preventDefault();
-  if(!endpoint)return;
+  if(!endpoint||onlineSummary||status==='loading')return;
   const key=el('key').value.trim();
-  reset();
-  const current=sequence,controller=new AbortController();
+  el('key').value='';
+  if(!key)return;
+  const current=++sequence,controller=new AbortController();
   const timer=setTimeout(()=>controller.abort(),25000);
   status='loading';render();
   try {
-    const response=await fetch(endpoint,{method:'POST',body:new URLSearchParams({action:'summary',key}),cache:'no-store',signal:controller.signal});
+    const response=await fetch(endpoint,{
+      method:'POST',body:new URLSearchParams({action:'summary',key}),cache:'no-store',signal:controller.signal
+    });
     const value=await response.json();
-    if(!response.ok || !value.ok || !Number.isInteger(value.total) || !value.counts) throw Error();
-    if(sequence===current){summary=value;source='live';status='';}
-  } catch {if(sequence===current) status='fail';}
-  finally{clearTimeout(timer);render();}
+    if(sequence!==current)return;
+    if(response.ok && value.ok===false && value.error==='access') {
+      status='badPassword';
+    } else if(response.ok && value.ok===true && Number.isInteger(value.total) &&
+      value.stressByFrequency && fields.every(field=>value.counts?.[field.key])) {
+      onlineSummary=value;
+      setOnlineView();
+    } else {
+      status='loginFailed';
+    }
+  } catch {
+    if(sequence===current)status='loginFailed';
+  } finally {
+    clearTimeout(timer);
+    if(sequence===current) {
+      render();
+      if(onlineSummary)el('title').focus();
+      else el('key').focus();
+    }
+  }
 };
+
 el('csv').onchange=async event=>{
   const file=event.target.files[0];
-  if(!file)return;
-  reset();const current=sequence;
+  if(!onlineSummary||!file)return;
+  const current=++sequence;
   try {
     const data=fromCsv(await file.text());
-    if(sequence===current){summary=data.summary;excluded=data.excluded;source='local';}
-  } catch {if(sequence===current) status='fail';}
+    if(sequence!==current)return;
+    summary=data.summary;excluded=data.excluded;source='local';status='';
+  } catch {
+    if(sequence===current)status='fail';
+  }
   render();
 };
 document.querySelectorAll('[data-lang]').forEach(b=>b.onclick=()=>{

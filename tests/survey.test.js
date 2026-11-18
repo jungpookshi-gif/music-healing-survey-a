@@ -15,7 +15,7 @@ test('the invitation link opens a fresh survey with only the chosen language', (
   assert.equal(surveyInviteUrl(page, 'ko'), 'https://example.test/music-healing-survey-a/?lang=ko');
 });
 
-test('the share menu receives the invitation and the copy button works without native sharing', async () => {
+test('mobile sharing uses the public URL and the same button copies when share is unavailable', async () => {
   const nodes = {
     '#share-survey': {}, '#copy-survey-link': {}, '#share-status': {},
     '#survey-link-wrap': {hidden:true}, '#survey-link': {}
@@ -27,15 +27,14 @@ test('the share menu receives the invitation and the copy button works without n
     canShare: () => true,
     share: async invitation => { shared = invitation; },
   });
-  assert.equal(nodes['#share-survey'].hidden, false);
   await nodes['#share-survey'].onclick();
-  assert.deepEqual(shared, {title:'shareTitle',text:'inviteText',url});
+  assert.deepEqual(shared, {url});
 
   connectSurveyShare(section, url, key => key, {
     clipboard:{writeText:async value => { copied = value; }}
   });
-  assert.equal(nodes['#share-survey'].hidden, true);
-  await nodes['#copy-survey-link'].onclick();
+  assert.notEqual(nodes['#share-survey'].hidden, true);
+  await nodes['#share-survey'].onclick();
   assert.equal(copied, url);
   assert.equal(nodes['#share-status'].textContent, 'linkCopied');
 });
@@ -52,4 +51,25 @@ test('a blocked clipboard leaves a selectable survey link', async () => {
   assert.equal(nodes['#survey-link'].value, url);
   assert.equal(nodes['#survey-link'].selected, true);
   assert.equal(nodes['#share-status'].textContent, 'copyManually');
+});
+
+test('an in-app browser that rejects sharing reveals the URL and still offers KakaoTalk copying', async () => {
+  const nodes = {
+    '#share-survey': {}, '#copy-survey-link': {}, '#share-status': {},
+    '#survey-link-wrap': {hidden:true}, '#survey-link': {focus(){},select(){this.selected=true;}}
+  };
+  const url = 'https://example.test/survey/?lang=ko';
+  const section = {querySelector: selector => nodes[selector],ownerDocument:{execCommand:action=>action==='copy'}};
+  connectSurveyShare(section,url,key=>key,{
+    canShare:()=>false,
+    share:async ()=>{throw new DOMException('No targets','AbortError');},
+    clipboard:{writeText:async ()=>{throw new DOMException('Clipboard blocked','NotAllowedError');}}
+  });
+  await nodes['#share-survey'].onclick();
+  assert.equal(nodes['#survey-link-wrap'].hidden,false);
+  assert.equal(nodes['#share-status'].textContent,'shareUseCopy');
+  await nodes['#copy-survey-link'].onclick();
+  assert.equal(nodes['#survey-link'].value,url);
+  assert.equal(nodes['#survey-link'].selected,true);
+  assert.equal(nodes['#share-status'].textContent,'linkCopied');
 });

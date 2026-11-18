@@ -1,7 +1,52 @@
-<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="referrer" content="no-referrer"><title>Survey A · Research admin</title><link rel="stylesheet" href="style.css"></head><body>
-<header><div class="top"><a href="../">Music Healing <b>Survey A</b></a><nav id="languages" aria-label="Language"><button data-lang="vi">VI</button><button data-lang="ko">한국어</button><button data-lang="en">EN</button><button data-lang="zh">中文</button></nav></div></header>
-<main><p class="eyebrow" id="workspace"></p><h1 id="title"></h1><p id="sub" class="subtitle"></p>
-<section class="card access"><h2 id="connect"></h2><div class="sources"><form id="login"><label for="key" id="key-label"></label><input type="password" id="key" autocomplete="current-password" required maxlength="256"><button class="primary" id="online"></button><p id="connection-info"></p></form><div class="load"><label class="file" for="csv" id="file-label"></label><input type="file" id="csv" accept=".csv,text/csv"><p id="private"></p></div></div><p role="status" id="status"></p></section>
-<div class="dash-top"><h2 id="overall"></h2><button id="clear" hidden></button></div><div class="kpis" id="kpis"></div>
-<section class="card" id="relation"></section><div id="sections"></div>
-</main><script src="../config.js?v=2-online"></script><script type="module" src="dashboard.js?v=4"></script></body></html>
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex">
+  <title>Survey A · Research admin</title>
+  <link rel="stylesheet" href="style.css?v=6">
+</head>
+<body>
+  <header><div class="top">
+    <a href="../">Music Healing <b>Survey A</b></a>
+    <nav id="languages" aria-label="Language">
+      <button data-lang="vi">VI</button><button data-lang="ko">한국어</button>
+      <button data-lang="en">EN</button><button data-lang="zh">中文</button>
+    </nav>
+  </div></header>
+  <main>
+    <section class="card admin-login" id="login-panel" aria-labelledby="sign-in-title">
+      <h1 id="sign-in-title">Đăng nhập quản trị</h1>
+      <form id="login" method="post">
+        <label for="key" id="key-label">Mật khẩu quản trị</label>
+        <input type="password" id="key" autocomplete="current-password" required maxlength="256">
+        <button type="submit" class="primary" id="online" disabled>Đăng nhập</button>
+        <p id="login-status" role="status"></p>
+      </form>
+    </section>
+    <section id="dashboard" aria-labelledby="title" hidden inert>
+      <div class="dash-top">
+        <p class="eyebrow" id="workspace"></p>
+        <button type="button" id="sign-out"></button>
+      </div>
+      <h1 id="title" tabindex="-1"></h1>
+      <p id="sub" class="subtitle"></p>
+      <section class="card access">
+        <h2 id="connect"></h2>
+        <label class="file" for="csv" id="file-label"></label>
+        <input type="file" id="csv" accept=".csv,text/csv">
+        <p id="private"></p>
+        <p role="status" id="status"></p>
+      </section>
+      <div class="dash-top"><h2 id="overall"></h2><button type="button" id="clear" hidden></button></div>
+      <div class="kpis" id="kpis"></div>
+      <section class="card" id="relation"></section>
+      <div id="sections"></div>
+    </section>
+  </main>
+  <script src="../config.js?v=2-online"></script>
+  <script type="module" src="dashboard.js?v=6"></script>
+</body>
+</html>

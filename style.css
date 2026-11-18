@@ -33,3 +33,10 @@
 #survey-link{width:100%;padding:9px;border:1px solid var(--line);border-radius:9px;color:var(--ink);background:#fcfbfe;font:inherit;font-size:14px}
 #share-status{margin:0;font-size:13px}
 #share-status:not(:empty){margin-top:10px}
+
+.share-actions button{min-height:44px}
+#survey-link{font-size:16px}
+@media(max-width:600px){
+  .share-actions{display:grid;grid-template-columns:minmax(0,1fr)}
+  .share-actions button{width:100%}
+}

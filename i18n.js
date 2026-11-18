@@ -251,13 +251,6 @@ export const text = {
     "过去7天的音乐与压力",
     "Өнгөрсөн 7 хоногийн хөгжим ба стресс"
   ],
-  "research": [
-    "Quản trị",
-    "연구 관리자",
-    "Research admin",
-    "研究管理",
-    "Судалгааны удирдлага"
-  ],
   "footer": [
     "10 câu hỏi",
     "10개 문항",
@@ -357,11 +350,11 @@ export const text = {
     "Найзуудаа судалгаанд урих"
   ],
   "shareHelp": [
-    "Chia sẻ đường dẫn qua Messenger, KakaoTalk, Instagram hoặc ứng dụng khác.",
-    "Messenger, 카카오톡, Instagram 등에서 설문 링크를 공유할 수 있습니다.",
-    "Share the survey link in Messenger, KakaoTalk, Instagram or another app.",
-    "可通过 Messenger、KakaoTalk、Instagram 或其他应用分享问卷链接。",
-    "Судалгааны холбоосыг Messenger, KakaoTalk, Instagram болон бусад апп-аар хуваалцаарай."
+    "Chọn KakaoTalk trong menu chia sẻ, hoặc sao chép link rồi dán vào cuộc trò chuyện.",
+    "공유 메뉴에서 카카오톡을 선택하거나 링크를 복사해 대화창에 붙여 넣으세요.",
+    "Choose KakaoTalk in the share menu or copy the link and paste it into a chat.",
+    "在分享菜单中选择 KakaoTalk，或复制链接后粘贴到聊天中。",
+    "Хуваалцах цэснээс KakaoTalk-ыг сонгох эсвэл холбоосыг хуулж чатад буулгана уу."
   ],
   "shareSurvey": [
     "Chia sẻ khảo sát",
@@ -371,11 +364,11 @@ export const text = {
     "Судалгааг хуваалцах"
   ],
   "copyLink": [
-    "Sao chép liên kết",
-    "링크 복사",
-    "Copy link",
-    "复制链接",
-    "Холбоос хуулах"
+    "Sao chép link cho KakaoTalk",
+    "카카오톡에 보낼 링크 복사",
+    "Copy link for KakaoTalk",
+    "复制 KakaoTalk 分享链接",
+    "KakaoTalk-д илгээх холбоос хуулах"
   ],
   "surveyLink": [
     "Liên kết khảo sát",
@@ -383,20 +376,6 @@ export const text = {
     "Survey link",
     "问卷链接",
     "Судалгааны холбоос"
-  ],
-  "shareTitle": [
-    "Khảo sát Music Healing",
-    "Music Healing 설문",
-    "Music Healing Survey",
-    "Music Healing 问卷",
-    "Music Healing судалгаа"
-  ],
-  "inviteText": [
-    "Mời bạn tham gia khảo sát ngắn về thói quen nghe nhạc và căng thẳng trong 7 ngày qua. Khảo sát dành cho người từ 18 đến 65 tuổi.",
-    "지난 7일 동안의 음악 청취 습관과 스트레스에 관한 짧은 설문에 참여해 주세요. 만 18~65세가 참여할 수 있습니다.",
-    "Take a short survey about music listening and stress over the past 7 days. Open to people aged 18 to 65.",
-    "欢迎参加关于过去7天听音乐习惯和压力感受的简短问卷。适合18至65周岁的人士。",
-    "Өнгөрсөн 7 хоногийн хөгжим сонсох дадал, стрессийн тухай богино судалгаанд оролцоорой. 18–65 насныханд нээлттэй."
   ],
   "linkCopied": [
     "Đã sao chép. Bạn có thể dán liên kết vào cuộc trò chuyện.",
@@ -413,10 +392,10 @@ export const text = {
     "Сонгогдсон холбоосыг хуулж чатад буулгана уу."
   ],
   "shareUseCopy": [
-    "Bạn có thể sao chép liên kết để chia sẻ.",
-    "링크를 복사해 공유할 수 있습니다.",
-    "You can copy the link to share it.",
-    "您可以复制链接后分享。",
-    "Холбоосыг хуулж хуваалцаж болно."
+    "Bạn có thể dùng nút sao chép link để gửi qua KakaoTalk.",
+    "링크 복사 버튼으로 카카오톡에 보낼 수 있습니다.",
+    "Use the copy button to send the link in KakaoTalk.",
+    "可以使用复制按钮将链接发到 KakaoTalk。",
+    "Холбоос хуулах товчийг ашиглан KakaoTalk-аар илгээж болно."
   ]
 };
