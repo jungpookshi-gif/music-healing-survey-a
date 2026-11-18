@@ -1,7 +1,7 @@
 import {fields} from '../schema.js?v=4';
-import {fromCsv,mean,barsFor} from './analysis.js?v=6';
-import {words,shortNames} from './labels.js?v=8';
-import {renderCharts} from './charts.js?v=2';
+import {ageBands,fromCsv,mean,barsFor} from './analysis.js?v=6';
+import {words,shortNames} from './labels.js?v=9';
+import {renderCharts} from './charts.js?v=3';
 
 const languages=['vi','ko','en','zh'];
 const query=new URL(location.href);
@@ -69,6 +69,7 @@ function render() {
   document.querySelectorAll('[data-lang]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.lang===lang)));
   if (!signedIn) {
     for (const id of ['kpis','charts','table-head','table-body']) el(id).replaceChildren();
+    el('study-scope').textContent='';
     return;
   }
   for (const id of ['workspace','title','sub','connect','private','overall','clear']) el(id).textContent=t(id);
@@ -86,6 +87,15 @@ function render() {
     kpis.append(box);
   }
   const langIndex=languages.indexOf(lang);
+  const [firstAge]=ageBands[0], [,lastAge]=ageBands.at(-1);
+  const validAges=Object.entries(summary.counts.age).filter(([key])=>{
+    const age=Number(key);
+    return Number.isInteger(age)&&age>=firstAge&&age<=lastAge;
+  });
+  const ageTotal=validAges.reduce((sum,[,n])=>sum+n,0);
+  const young=validAges.reduce((sum,[age,n])=>Number(age)<=34 ? sum+n : sum,0);
+  el('study-scope').textContent=ageTotal
+    ? `${t('studyScope')} ${t('ageProfile',{young:number(young),total:number(ageTotal),share:number(young/ageTotal*100,1)})}` : t('studyScope');
   renderCharts(el('charts'),summary,{langIndex,number,t});
   renderTable(langIndex);
 }

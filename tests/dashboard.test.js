@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {fields} from '../schema.js';
 import {validAnswer,VERSION} from '../logic.js';
 import {fromCsv,mean,parseCsv} from '../admin/analysis.js';
-import {distributionStats,scatterStats} from '../admin/relationship-analysis.js';
+import {distributionStats,durationSensitivity,scatterStats} from '../admin/relationship-analysis.js';
 import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
 
@@ -64,6 +64,15 @@ test('joint chart statistics retain repeated coordinates, rank ties, and boxplot
  assert.equal(scatterStats({0:{10:2},15:{4:1},30:{0:2}}).rho,-1);
  const box=distributionStats({0:1,5:3,6:3,10:1});
  assert.deepEqual([box.q1,box.median,box.q3,box.lowerWhisker,box.upperWhisker],[5,5.5,6,5,6]);
+});
+
+test('duration sensitivity keeps the primary sample and recalculates on the retained pairs', () => {
+ const paired=scatterStats({15:{1:2},30:{2:2},45:{3:2},600:{0:1}});
+ const sensitivity=durationSensitivity(paired);
+ assert.deepEqual(sensitivity,{cutoff:78.75,omitted:1,n:6,rho:1});
+ assert.equal(paired.n,7);
+ assert.notEqual(paired.rho,sensitivity.rho);
+ assert.equal(durationSensitivity(scatterStats({0:{0:2},15:{4:1},30:{10:2}})),null);
 });
 
 test('collector preserves old rows and stores optional details once, outside aggregates', () => {
@@ -131,10 +140,10 @@ test('administrator dashboard requires a successful server password check and lo
  const elements = new Map();
  const makeElement = (tag) => ({
    tag,
-   hidden:false, inert:false, value:'', textContent:'', style:{}, children:[],
+   hidden:false, inert:false, value:'', textContent:'', style:{}, children:[], attributes:{},
    append(...children){ this.children.push(...children); },
    replaceChildren(...children){ this.children=children; },
-   setAttribute(){}, focus(){ this.focused=true; }
+   setAttribute(name,value){ this.attributes[name]=value; }, focus(){ this.focused=true; }
  });
  const element = id => {
    if(!elements.has(id)) elements.set(id,makeElement());
@@ -189,7 +198,10 @@ test('administrator dashboard requires a successful server password check and lo
  await element('csv').onchange({target:{files:[{text:async()=>listeningCsv}]}});
  assert.equal(charts.children.length,6);
  assert.equal(charts.children[0].children[0].textContent,'Age group × genre listened to when stressed');
- assert.equal(charts.children[0].children.find(child=>child.className==='insight').textContent,'3 cells tie for the largest count at 1 each, out of 3 genre answers.');
+ const finding = card => card.children.find(child=>child.className==='insight').textContent;
+ assert.match(finding(charts.children[0]),/All age groups with data have fewer than 5 responses/);
+ assert.equal(charts.children[0].children.find(child=>child.className==='chart-coverage').textContent,'Uses 3/4 valid responses');
+ assert.match(element('study-scope').textContent,/2\/4 responses with valid ages \(50%\)/);
  assert.equal(charts.children[4].children[0].textContent,'Listening time × stress score');
  assert.equal(charts.children[5].children[0].textContent,'Stress scores by music genre');
  for(const card of charts.children) {
@@ -198,10 +210,23 @@ test('administrator dashboard requires a successful server password check and lo
    const copy=report.children[1].children.map(p=>p.textContent).join(' ');
    assert.ok((copy.match(/\p{L}+/gu) ?? []).length>=300,card.children[0].textContent);
  }
+ const groupRows=(count,age,freq,score,genre)=>Array.from({length:count},(_,i)=>
+   [`${freq}-${i}`,'','','vi',VERSION,true,age,'na','vn','','30',freq,genre,'',8,score].join(','));
+ const groupedCsv=[header,...groupRows(5,24,'rarely',4,'pop'),...groupRows(6,27,'sometimes',5,'ballad'),...groupRows(1,38,'always',8,'rock_metal')].join('\n');
+ await element('csv').onchange({target:{files:[{text:async()=>groupedCsv}]}});
+ assert.match(finding(charts.children[0]),/18–24 age group, Pop led \(5\/5, 100%\)/);
+ assert.doesNotMatch(finding(charts.children[0]),/35–44/);
+ const sparseCells=plotCard(charts.children[0]).children[0].children.flatMap(row=>row.children).filter(node=>node.attributes.fill==='url(#heat-sparse-row)');
+ assert.ok(sparseCells.length>0);
+ assert.match(finding(charts.children[3]),/means range from 4 to 5 out of 10/);
+ assert.doesNotMatch(finding(charts.children[3]),/8 out of 10/);
+ const frequencyMarks=plotCard(charts.children[3]).children[0].children.flatMap(row=>row.children).filter(node=>node.attributes.class==='dot-mark sparse-dot');
+ assert.equal(frequencyMarks.length,1);
  assert.equal(element('key').value,'');
  element('sign-out').onclick();
  assert.equal(element('dashboard').hidden,true);
  assert.equal(element('kpis').children.length,0);
  assert.equal(charts.children.length,0);
+ assert.equal(element('study-scope').textContent,'');
  assert.equal(element('table-body').children.length,0);
 });

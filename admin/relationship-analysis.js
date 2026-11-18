@@ -1,3 +1,5 @@
+export const smallGroupSize = 5;
+
 function orderedCounts(counts) {
   return Object.entries(counts).map(([value, count]) => ({value: Number(value), count}))
     .filter(({value, count}) => Number.isFinite(value) && Number.isInteger(count) && count > 0)
@@ -67,4 +69,20 @@ export function scatterStats(minutesStress) {
   }
   const rho = n >= 3 && spreadMinutes && spreadScores ? cross / Math.sqrt(spreadMinutes * spreadScores) : null;
   return {n, points, minutes, scores, rho};
+}
+export function durationSensitivity({points, minutes: duration}) {
+  const cutoff = duration.q3 + 1.5 * duration.iqr;
+  const retained = {};
+  let omitted = 0;
+  for (const {minutes, score, count} of points) {
+    if (minutes > cutoff) {
+      omitted += count;
+    } else {
+      const scores = retained[minutes] ??= {};
+      scores[score] = count;
+    }
+  }
+  if (!omitted) return null;
+  const reduced = scatterStats(retained);
+  return {cutoff, omitted, n: reduced.n, rho: reduced.rho};
 }

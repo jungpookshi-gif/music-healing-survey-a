@@ -1,10 +1,9 @@
 import {options} from '../schema.js?v=4';
 import {canvas, svg, text} from './plot.js?v=1';
-import {distributionStats, scatterStats} from './relationship-analysis.js?v=1';
-import {boxReport, scatterReport} from './chart-interpretation.js?v=1';
+import {distributionStats, durationSensitivity, scatterStats, smallGroupSize} from './relationship-analysis.js?v=2';
+import {boxReport, scatterReport} from './chart-interpretation.js?v=2';
 
 const scoreTicks = [0, 2, 4, 6, 8, 10];
-const minimumBoxSize = 5;
 
 function mark(key, caption, count) {
   const element = svg('g', {class: 'relationship-mark', tabindex: -1, role: 'img', 'aria-label': caption});
@@ -117,7 +116,7 @@ function boxPlot(groups, title, scale, number, t) {
   plot.append(text((left + right) / 2, height - 4, t('stressAxis'), {'text-anchor': 'middle', class: 'axis-text'}));
   const marks = groups.map(({key, label, stats}, index) => {
     const y = top + (index + .5) * rowHeight;
-    const box = stats.n >= minimumBoxSize;
+    const box = stats.n >= smallGroupSize;
     const caption = t(box ? 'boxPoint' : 'boxSmallPoint', {
       label, n: number(stats.n), median: number(stats.median, 2), low: number(stats.q1, 2), high: number(stats.q3, 2),
       scores: stats.values.map(({value, count}) => `${number(value)} × ${number(count)}`).join(' · ')
@@ -151,28 +150,35 @@ function boxPlot(groups, title, scale, number, t) {
 export function relationshipCards(summary, {langIndex, number, t}) {
   const scatterTitle = t('scatterTitle'), scatterScale = t('scatterScale');
   const scatter = summary.minutesStress ? scatterStats(summary.minutesStress) : null;
-  const scatterCard = {title: scatterTitle, scale: scatterScale, wide: true, insight: t(summary.minutesStress ? 'empty' : 'pairedUnavailable')};
+  const scatterCard = {title: scatterTitle, scale: scatterScale, wide: true,
+    n: summary.minutesStress ? scatter?.n ?? 0 : undefined, insight: t(summary.minutesStress ? 'empty' : 'pairedUnavailable')};
   if (scatter) {
+    const sensitivity = durationSensitivity(scatter);
+    const insight = t(scatter.rho === null ? 'scatterMedianOnly' : 'scatterRho', {
+      n: number(scatter.n), minutes: number(scatter.minutes.median, 1), score: number(scatter.scores.median, 1), rho: number(scatter.rho ?? 0, 2)
+    });
+    const comparison = sensitivity && sensitivity.rho !== null ? t('scatterSensitivity', {
+      omitted: number(sensitivity.omitted), cutoff: number(sensitivity.cutoff, 2), rho: number(sensitivity.rho, 2), n: number(sensitivity.n)
+    }) : '';
     Object.assign(scatterCard, scatterPlot(scatter, scatterTitle, scatterScale, number, t), {
-      insight: t(scatter.rho === null ? 'scatterMedianOnly' : 'scatterRho', {
-        n: number(scatter.n), minutes: number(scatter.minutes.median, 1), score: number(scatter.scores.median, 1), rho: number(scatter.rho ?? 0, 2)
-      }),
-      report: scatterReport(scatter, summary.total)
+      insight: comparison ? `${insight} ${comparison}` : insight,
+      report: scatterReport(scatter, summary.total, sensitivity)
     });
   }
 
-  const boxTitle = t('boxTitle'), boxScale = t('boxScale', {minimum: minimumBoxSize});
+  const boxTitle = t('boxTitle'), boxScale = t('boxScale', {minimum: smallGroupSize});
   const groups = options.genre.filter(([key]) => key !== 'none').flatMap(option => {
     const stats = distributionStats(summary.genreStress?.[option[0]] ?? {});
     return stats ? [{key: option[0], label: option[langIndex + 1], vi: option[1], stats}] : [];
   });
-  const boxCard = {title: boxTitle, scale: boxScale, wide: true, insight: t(summary.genreStress ? 'empty' : 'pairedUnavailable')};
+  const total = groups.reduce((sum, group) => sum + group.stats.n, 0);
+  const boxCard = {title: boxTitle, scale: boxScale, wide: true,
+    n: summary.genreStress ? total : undefined, insight: t(summary.genreStress ? 'empty' : 'pairedUnavailable')};
   if (groups.length) {
-    const n = groups.reduce((sum, group) => sum + group.stats.n, 0);
-    const boxes = groups.filter(group => group.stats.n >= minimumBoxSize).length;
+    const boxes = groups.filter(group => group.stats.n >= smallGroupSize).length;
     Object.assign(boxCard, boxPlot(groups, boxTitle, boxScale, number, t), {
-      insight: t('boxSummary', {n: number(n), groups: number(groups.length), boxes: number(boxes)}),
-      report: boxReport(groups.map(group => ({...group, label: group.vi})), summary.total, minimumBoxSize)
+      insight: t('boxSummary', {n: number(total), groups: number(groups.length), boxes: number(boxes)}),
+      report: boxReport(groups.map(group => ({...group, label: group.vi})), summary.total, smallGroupSize)
     });
   }
   return [scatterCard, boxCard];
