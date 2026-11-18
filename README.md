@@ -2,14 +2,14 @@
 
 [Survey](https://jungpookshi-gif.github.io/music-healing-survey-a/) · [Research dashboard](https://jungpookshi-gif.github.io/music-healing-survey-a/admin/) · [Participant information and invitations in five languages](materials/recruitment.md)
 
-This standalone survey for people aged 18 to 65 contains 10 questions in Vietnamese, Korean, English Simplified Chinese and Mongolian. At the end, the participant can optionally give a name and feedback. Names and feedback are stored with the response and excluded from dashboard aggregates. Instrument version `music-healing-survey-a/v2` covers current age, gender, country of residence, study/paid employment, daily listening minutes, frequency of listening when stressed, genre, listening purpose, liking and overall perceived stress.
+This standalone survey for people aged 18 to 65 contains 10 questions in Vietnamese, Korean, English, Simplified Chinese and Mongolian. At the end, the participant can optionally give a name and feedback. Names and feedback are stored with the response and excluded from dashboard aggregates. Instrument version `music-healing-survey-a/v2` covers age, gender, cultural background or country of origin, study/paid employment, daily listening minutes, frequency of listening when stressed, genre, listening purpose, liking and overall perceived stress.
 
 ## Questionnaire changes
 
 | Item | Research decision |
 |---|---|
 | A01, A02 | Accept completed ages 18–65 in new submissions and allow respondents to decline the gender item. |
-| A03 | Ask country of current residence. Country, nationality and cultural identity are different variables. Retain Mongolia, Myanmar and Nepal, and include China. |
+| A03 | Ask cultural background or country of origin. Earlier responses were collected using a country-of-residence question. |
 | A04 | Distinguish study only, paid work only, both, neither, and other situations. |
 | A05 | Average listening minutes over all seven days, including zero-listening days. |
 | A06 | Use a seven-day window and distinguish never listening during stress from experiencing no stress. |
@@ -25,7 +25,8 @@ The public website starts in preview mode whenever `config.js` has an empty endp
 2. For a fresh Apps Script installation, set `SHEET_ID` in `backend/Code.gs` to this sheet's ID in the private editor. Run `setup()` once with the sheet owner's account. This creates a key in the private `Admin access` tab. Keep both the sheet and script private.
 3. Deploy the collector as a web app, executing as the owner, with access appropriate to the intended participant audience. For anonymous submissions this requires the owner's approval for “Anyone.” Add the resulting `/exec` URL to `config.js`. Verify a submission against the actual sheet before recruitment.
 4. Open the administrator address directly and sign in with the password from the private spreadsheet’s Admin access tab. The server verifies it before returning aggregates and unlocking the dashboard. The page clears the password field on submit and locks again on sign-out or navigation.
-5. For local analysis choose the `Responses` tab in Sheets and download it as CSV. After signing in, open it in the dashboard with **Open local CSV**. Data stays in browser memory. Use **Return to online data** to restore the authenticated summary. The dashboard reports exclusions, skips older instrument versions, and counts 0 as a score. Both dashboard modes show counts per question, group sizes, means and missing responses. The frequency comparison describes groups in a cross-sectional survey.
+5. The dashboard shows a valid response count, an expandable summary table for the 10 questions, and four native SVG charts. The heatmap pairs age group and genre within each response, shows counts in the cells, and uses color for within-age-group percentages among participants who chose a genre. The other charts show daily listening time, 0–10 stress scores, and mean scores by listening frequency during stress. The last chart describes a cross-sectional survey comparison.
+6. For local analysis choose the `Responses` tab in Sheets and download it as CSV. After signing in, open it with **Open local CSV**. Use **Return to online data** to restore the authenticated summary. Older collectors that omit the age–genre pairs show a genre-count chart until their deployment is updated. The dashboard displays exclusions for CSV imports and counts 0 as a valid score.
 
 ## Participant experience
 

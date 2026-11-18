@@ -6,7 +6,7 @@
   <meta name="referrer" content="no-referrer">
   <meta name="robots" content="noindex">
   <title>Survey A · Research admin</title>
-  <link rel="stylesheet" href="style.css?v=6">
+  <link rel="stylesheet" href="style.css?v=7">
 </head>
 <body>
   <header><div class="top">
@@ -42,11 +42,23 @@
       </section>
       <div class="dash-top"><h2 id="overall"></h2><button type="button" id="clear" hidden></button></div>
       <div class="kpis" id="kpis"></div>
-      <section class="card" id="relation"></section>
-      <div id="sections"></div>
+      <section class="dashboard-section" aria-labelledby="charts-title">
+        <h2 id="charts-title"></h2>
+        <div class="chart-grid" id="charts"></div>
+      </section>
+      <section class="card dashboard-section" aria-labelledby="table-title">
+        <h2 id="table-title"></h2>
+        <div class="table-frame" tabindex="0">
+          <table aria-labelledby="table-title">
+            <thead id="table-head"></thead>
+            <tbody id="table-body"></tbody>
+          </table>
+        </div>
+        <p class="meta table-note" id="table-note"></p>
+      </section>
     </section>
   </main>
   <script src="../config.js?v=2-online"></script>
-  <script type="module" src="dashboard.js?v=6"></script>
+  <script type="module" src="dashboard.js?v=7"></script>
 </body>
 </html>

@@ -1,6 +1,7 @@
-import {fields,options} from '../schema.js';
-import {fromCsv,mean,barsFor} from './analysis.js?v=4';
-import {words,shortNames} from './labels.js?v=6';
+import {fields} from '../schema.js?v=4';
+import {fromCsv,mean,barsFor} from './analysis.js?v=5';
+import {words,shortNames} from './labels.js?v=7';
+import {renderCharts} from './charts.js?v=1';
 
 const languages=['vi','ko','en','zh'];
 const query=new URL(location.href);
@@ -9,7 +10,10 @@ let onlineSummary=null, summary=null, source='', excluded=0, status='', sequence
 const configured=window.SURVEY_CONFIG?.endpoint || '';
 const endpoint=/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(configured)?configured:'';
 const el=id=>document.getElementById(id);
-const t=key=>words[key][languages.indexOf(lang)];
+const t=(key,values)=>{
+  const label=words[key][languages.indexOf(lang)];
+  return values ? label.replace(/\{(\w+)\}/g, (_, name) => values[name]) : label;
+};
 const number=(value,digits=0)=>new Intl.NumberFormat(lang,{maximumFractionDigits:digits}).format(value);
 function node(tag,content,className) {
   const element=document.createElement(tag);
@@ -17,40 +21,36 @@ function node(tag,content,className) {
   if(className) element.className=className;
   return element;
 }
-function bar(label,amount,maximum,caption) {
-  const row=node('div',null,'bar-row');
-  const line=node('div',null,'row-label');
-  line.append(node('span',label),node('span',caption));
-  const track=node('div',null,'track'),fill=node('div',null,'fill');
-  track.setAttribute('aria-hidden','true');
-  fill.style.width=(maximum?Math.min(100,amount/maximum*100):0)+'%';
-  track.append(fill);row.append(line,track);
-  return row;
-}
-function questionCard(field,i) {
-  const card=node('article',null,'card');
-  const heading=node('div',null,'chart-head');
-  heading.append(node('h3',shortNames[i][languages.indexOf(lang)]),node('small',field.code));
-  card.append(heading);
-  if(!summary) {card.append(node('p',t('closed'),'meta'));return card;}
-  const counts=summary.counts[field.key];
-  const bars=barsFor(field,counts,languages.indexOf(lang));
-  const n=bars.reduce((s,b)=>s+b.value,0);
-  card.append(node('p',t('valid')+' '+number(n)+' · '+t('unavailable')+' '+number(summary.total-n),'meta'));
-  if(!n){card.append(node('p',t('empty'),'insight'));return card;}
-  const plot=node('div',null,'bars');
-  for(const item of bars) plot.append(bar(item.label,item.value,n,number(item.value)+' · '+number(item.value/n*100,1)+'%'));
-  const max=Math.max(...bars.map(b=>b.value));
-  const leaders=bars.filter(b=>b.value===max);
-  const lead=leaders.map(b=>b.label).join(' / ');
-  const statement=(leaders.length===1?t('top'):t('tie'))+' · '+lead+' ('+number(max)+'/'+number(n)+', '+number(max/n*100,1)+'%).';
-  let avg='';
-  if(field.type!=='choice') {
-    const units=field.type==='scale'?'/10':field.key==='age'?' '+t('ageUnit'):' '+t('minutesUnit');
-    avg=' '+t('avg')+' '+number(mean(counts),1)+units+'.';
+function renderTable(langIndex) {
+  const row=node('tr',null);
+  for(const label of ['question','valid','unavailable','distribution']) {
+    const cell=node('th',t(label));
+    cell.setAttribute('scope','col');
+    row.append(cell);
   }
-  card.append(plot,node('p',statement+avg,'insight'));
-  return card;
+  el('table-head').replaceChildren(row);
+  const body=el('table-body');
+  body.replaceChildren();
+  fields.forEach((field,index)=>{
+    const counts=summary.counts[field.key];
+    const rows=barsFor(field,counts,langIndex).filter(item=>item.value);
+    const answered=rows.reduce((n,item)=>n+item.value,0);
+    const fieldName=node('th',null);
+    fieldName.setAttribute('scope','row');
+    fieldName.append(node('span',field.code,'field-code'),node('span',shortNames[index][langIndex]));
+    const detail=node('td',answered ? null : '—');
+    if(answered) {
+      const disclosure=node('details',null);
+      const breakdown=node('dl',null);
+      for(const item of rows) breakdown.append(node('dt',item.label),node('dd',number(item.value)));
+      disclosure.append(node('summary',t('distribution')),breakdown);
+      detail.append(disclosure);
+    }
+    const line=node('tr',null);
+    line.append(fieldName,node('td',number(answered),'table-value'),
+      node('td',number(Math.max(0,summary.total-answered)),'table-value'),detail);
+    body.append(line);
+  });
 }
 function render() {
   document.documentElement.lang=lang;
@@ -68,12 +68,15 @@ function render() {
   el('login-status').textContent=signedIn?'':!endpoint?t('pending'):status?t(status):'';
   document.querySelectorAll('[data-lang]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.lang===lang)));
   if (!signedIn) {
-    for (const id of ['kpis','relation','sections']) el(id).replaceChildren();
+    for (const id of ['kpis','charts','table-head','table-body']) el(id).replaceChildren();
     return;
   }
   for (const id of ['workspace','title','sub','connect','private','overall','clear']) el(id).textContent=t(id);
   el('sign-out').textContent=t('signOut');
   el('file-label').textContent=t('file');
+  el('charts-title').textContent=t('charts');
+  el('table-title').textContent=t('table');
+  el('table-note').textContent=t('tableCulture');
   el('clear').hidden=source!=='local';
   el('status').textContent=status?t(status):t(source)+(source==='local'?' · '+t('omitted')+' '+excluded:'');
   const kpis=el('kpis');kpis.replaceChildren();
@@ -82,20 +85,9 @@ function render() {
     box.append(node('small',t(id)),node('strong',value==null?'—':number(value,1),'value'));
     kpis.append(box);
   }
-  const relation=el('relation');relation.replaceChildren(node('h2',t('compare')));
-  if(summary?.total) {
-    for(const option of options.stress_frequency) {
-      const group=summary.stressByFrequency[option[0]];
-      if(group?.n) relation.append(bar(option[languages.indexOf(lang)+1],group.sum/group.n,10,number(group.sum/group.n,1)+'/10 · n='+group.n));
-    }
-    relation.append(node('p',t('groupHelp'),'insight'));
-  } else relation.append(node('p',t(summary?'zero':'closed'),'meta'));
-  const sections=el('sections');sections.replaceChildren();
-  for(const [label,indices] of [['freq',[4,5,6,7]],['ratings',[8,9]],['people',[0,1,2,3]]]) {
-    const grid=node('div',null,'grid');
-    for(const i of indices) grid.append(questionCard(fields[i],i));
-    sections.append(node('h2',t(label),'section-title'),grid);
-  }
+  const langIndex=languages.indexOf(lang);
+  renderCharts(el('charts'),summary,{langIndex,number,t});
+  renderTable(langIndex);
 }
 function setOnlineView() {
   summary=onlineSummary;source='live';excluded=0;status='';

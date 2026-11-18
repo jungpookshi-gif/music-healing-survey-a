@@ -9,3 +9,37 @@
 #login-status:not(:empty){margin-top:12px}
 #dashboard>.dash-top:first-child{margin-top:0}
 .access #private{margin:8px 0;font-size:13px}
+
+.dashboard-section{margin-top:28px}
+.chart-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.chart-card{min-width:0;display:flex;flex-direction:column}
+.chart-wide{grid-column:1/-1}
+.chart-card h3{font-size:clamp(17px,2vw,20px);line-height:1.35}
+.chart-card .meta{font-size:13px}
+.chart-frame{overflow-x:auto;margin:10px 0 12px;padding:3px 0;scrollbar-color:#d0c1e9 #f3eff9}
+.chart-frame:focus-visible,.table-frame:focus-visible,summary:focus-visible{outline:3px solid #4d85ca;outline-offset:2px}
+.chart-frame svg{display:block;width:100%;min-width:460px;height:auto;max-width:660px;margin:auto;font-family:inherit;font-size:13px;fill:#392f4e;font-variant-numeric:tabular-nums}
+.chart-frame .heatmap{min-width:750px;max-width:900px}
+.axis-guide{stroke:#e6dfee;stroke-width:1}
+.axis-text{fill:#5e546f;font-size:12px}
+.value-text{fill:#392b58;font-weight:650}
+.bar-mark{fill:#8764cf}
+.score-mark{fill:#7452be}
+.dot-stem{stroke:#72b5a9;stroke-width:3}
+.dot-mark{fill:#236a60}
+.heat-light{fill:white;font-weight:700}
+.heat-dark{fill:#392b50;font-weight:650}
+.chart-card .insight{margin-top:auto;border-inline-start:3px solid #b7a1e0}
+.chart-card>.meta + .insight{margin-top:12px}
+.table-frame{overflow-x:auto}
+.table-frame table{width:100%;min-width:630px;border-collapse:collapse;font-size:14px;text-align:start}
+.table-frame th,.table-frame td{padding:11px 12px;vertical-align:top;text-align:start;border-bottom:1px solid #eee9f3}
+.table-frame thead th{background:#f5f0fb;color:#503b75;font-size:13px}
+.table-frame tbody th{font-weight:650}
+.table-value{font-variant-numeric:tabular-nums;white-space:nowrap}
+.field-code{display:inline-block;min-width:39px;color:#695a7d;font-size:12px;font-weight:600}
+.table-frame details summary{cursor:pointer;color:#5d3b9c;white-space:nowrap}
+.table-frame dl{display:grid;grid-template-columns:1fr auto;column-gap:12px;font-size:13px;margin:9px 0 0}
+.table-frame dd{margin:0;text-align:end;font-variant-numeric:tabular-nums}
+.table-note{margin-top:12px}
+@media(max-width:680px){.chart-grid{grid-template-columns:1fr}}

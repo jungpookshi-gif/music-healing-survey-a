@@ -1,8 +1,10 @@
-import {fields,options} from '../schema.js';
-import {VERSION,validAnswer,previousMaxAge} from '../logic.js?v=4';
+import {fields,options} from '../schema.js?v=4';
+import {VERSION,validAnswer,previousMaxAge} from '../logic.js?v=5';
+
+export const ageBands = [[18,24],[25,34],[35,44],[45,54],[55,64],[65,previousMaxAge]];
 
 export function emptySummary() {
-  return {ok:true,total:0,counts:Object.fromEntries(fields.map(f=>[f.key,{}])),stressByFrequency:{}};
+  return {ok:true,total:0,counts:Object.fromEntries(fields.map(f=>[f.key,{}])),stressByFrequency:{},ageGenre:{}};
 }
 
 // CSV exported by Google Sheets. Quoted fields may contain commas or newlines.
@@ -51,6 +53,11 @@ export function fromCsv(content) {
     }
     const group=summary.stressByFrequency[answers.stress_frequency]??={n:0,sum:0};
     group.n++;group.sum+=answers.stress_week;
+    if(answers.stress_genre !== 'none') {
+      const [low] = ageBands.find(([,high]) => answers.age <= high);
+      const genres = summary.ageGenre[low] ??= {};
+      genres[answers.stress_genre] = (genres[answers.stress_genre] || 0) + 1;
+    }
   }
   return {summary,excluded};
 }
@@ -64,7 +71,7 @@ export function mean(counts) {
 export function barsFor(field,counts,langIndex) {
   if(field.type==='choice') return options[field.options].map(o=>({label:o[langIndex+1],value:counts[o[0]]||0}));
   if(field.type==='scale') return Array.from({length:11},(_,i)=>({label:String(i),value:counts[i]||0}));
-  const breaks=field.key==='age'?[[18,24],[25,34],[35,44],[45,54],[55,64],[65,previousMaxAge]]:[[0,0],[1,29],[30,59],[60,119],[120,239],[240,1440]];
+  const breaks=field.key==='age'?ageBands:[[0,0],[1,29],[30,59],[60,119],[120,239],[240,1440]];
   return breaks.map(([low,high])=>({
     label:low===high?String(low):low+'–'+high,
     value:Object.entries(counts).reduce((sum,[k,n])=>sum+(Number(k)>=low&&Number(k)<=high?n:0),0)

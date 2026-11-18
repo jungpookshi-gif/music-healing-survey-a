@@ -17,6 +17,7 @@ const CHOICES = {
 };
 const LIMITS = {age:[18,65],listen_min:[0,1440],genre_like:[0,10],stress_week:[0,10]};
 const PREVIOUS_MAX_AGE = 120;
+const AGE_BANDS = [[18,24],[25,34],[35,44],[45,54],[55,64],[65,PREVIOUS_MAX_AGE]];
 
 function workbook_() { return SpreadsheetApp.openById(SHEET_ID); }
 
@@ -41,7 +42,7 @@ function setup() {
 function json_(value) {
   return ContentService.createTextOutput(JSON.stringify(value)).setMimeType(ContentService.MimeType.JSON);
 }
-function doGet() { return json_({service:VERSION, detailsSupported:true, ageRange:LIMITS.age}); }
+function doGet() { return json_({service:VERSION, detailsSupported:true, ageRange:LIMITS.age, ageGenreAvailable:true}); }
 function validate_(data, maxAge = LIMITS.age[1]) {
   if (!data || data.schema !== VERSION || data.consent !== true ||
       !['vi','ko','en','zh','mn'].includes(data.language) ||
@@ -122,6 +123,7 @@ function summarize_(key) {
   const counts = {};
   for (const k of KEYS) counts[k] = {};
   const stressByFrequency = {};
+  const ageGenre = {};
   for (const row of rows) {
     for (let j=0;j<KEYS.length;j++) {
       const value = row[6+j], column = counts[KEYS[j]];
@@ -132,8 +134,16 @@ function summarize_(key) {
       const group = stressByFrequency[freq] || {n:0,sum:0};
       group.n++; group.sum+=stress; stressByFrequency[freq]=group;
     }
+    const age = row[6], genre = row[12];
+    if (Number.isInteger(age) && genre !== 'none' && CHOICES.stress_genre.includes(genre)) {
+      const band = AGE_BANDS.find(([low,high]) => age >= low && age <= high);
+      if (band) {
+        const genres = ageGenre[band[0]] || (ageGenre[band[0]] = {});
+        genres[genre] = (genres[genre] || 0) + 1;
+      }
+    }
   }
-  return {ok:true,total:rows.length,counts:counts,stressByFrequency:stressByFrequency};
+  return {ok:true,total:rows.length,counts:counts,stressByFrequency:stressByFrequency,ageGenre:ageGenre};
 }
 function doPost(e) {
   try {

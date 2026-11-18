@@ -8,6 +8,13 @@ import {readFileSync} from 'node:fs';
 
 const header='id,received_at,submitted_at,language,schema,consent,'+fields.map(f=>f.key).join(',');
 const sample='abc,,,ko,'+VERSION+',TRUE,24,na,kr,,0,never,none,,,0';
+const listeningRows = [
+ ['one','','','vi',VERSION,true,24,'na','vn','',30,'often','pop','',8,6],
+ ['two','','','vi',VERSION,true,25,'na','vn','',15,'sometimes','ballad','',5,8],
+ ['three','','','vi',VERSION,true,72,'na','vn','',0,'often','pop','',0,0],
+ ['four','','','vi',VERSION,true,35,'na','vn','','','no_stress','none','','',0]
+];
+const listeningCsv = [header,...listeningRows.map(row=>row.join(','))].join('\n');
 test('CSV excludes old versions and duplicates, counts zero and conditional missing correctly',()=>{
  const {summary,excluded}=fromCsv([header,sample,sample,sample.replace('abc','old').replace('/v2','/v1')].join('\r\n'));
  assert.equal(summary.total,1);assert.equal(excluded,2);assert.equal(mean(summary.counts.stress_week),0);
@@ -33,6 +40,16 @@ test('server validates v2, denies unauthenticated statistics, and summarizes the
  const payload={id:'89e52cd3-8157-4ee1-82ca-1c65d64f667e',submittedAt:new Date().toISOString(),consent:true,language:'ko',schema:VERSION,
  answers:{age:24,gender:'na',culture:'kr',stress_frequency:'no_stress',stress_genre:'none',stress_week:0}};
  env.validate_(payload);assert.throws(()=>env.validate_({...payload,answers:{...payload.answers,genre_like:0}}));
+});
+
+test('the heatmap pairs age and genre within the same response in both data sources', () => {
+ const rows=[header.split(','),...listeningRows];
+ const env={PropertiesService:{getScriptProperties:()=>({getProperty:()=> 'fixture-only'})},SpreadsheetApp:{openById:()=>({getSheetByName:()=>({getDataRange:()=>({getValues:()=>rows})})})}};
+ vm.createContext(env);
+ vm.runInContext(readFileSync(new URL('../backend/Code.gs',import.meta.url),'utf8'),env);
+ const frontend=fromCsv(listeningCsv).summary;
+ assert.deepEqual(frontend.ageGenre,{18:{pop:1},25:{ballad:1},65:{pop:1}});
+ assert.deepEqual(JSON.parse(JSON.stringify(env.summarize_('fixture-only'))),frontend);
 });
 
 test('collector preserves old rows and stores optional details once, outside aggregates', () => {
@@ -98,7 +115,8 @@ test('collector preserves old rows and stores optional details once, outside agg
 
 test('administrator dashboard requires a successful server password check and locks on sign-out', async t => {
  const elements = new Map();
- const makeElement = () => ({
+ const makeElement = (tag) => ({
+   tag,
    hidden:false, inert:false, value:'', textContent:'', style:{}, children:[],
    append(...children){ this.children.push(...children); },
    replaceChildren(...children){ this.children=children; },
@@ -109,13 +127,14 @@ test('administrator dashboard requires a successful server password check and lo
    return elements.get(id);
  };
  const environment = {
-   document:{documentElement:{},getElementById:element,createElement:makeElement,querySelectorAll:()=>[]},
+   document:{documentElement:{},getElementById:element,createElement:makeElement,createElementNS:(_ns,tag)=>makeElement(tag),querySelectorAll:()=>[]},
    location:{href:'https://example.test/admin/?lang=en'},
    window:{SURVEY_CONFIG:{endpoint:'https://script.google.com/macros/s/fixture/exec'},addEventListener(){}},
    fetch:async (_url,{body}) => {
      assert.equal(body.get('action'),'summary');
      const valid = body.get('key')==='test-password';
-     const result = valid ? fromCsv(header+'\n'+sample).summary : {ok:false,error:'access'};
+     const result = valid ? fromCsv(listeningCsv).summary : {ok:false,error:'access'};
+     if(valid) delete result.ageGenre;
      return {ok:true,json:async()=>result};
    }
  };
@@ -128,6 +147,8 @@ test('administrator dashboard requires a successful server password check and lo
  assert.equal(element('dashboard').hidden,true);
  assert.equal(element('dashboard').inert,true);
  assert.equal(element('kpis').children.length,0);
+ assert.equal(element('charts').children.length,0);
+ assert.equal(element('table-body').children.length,0);
  assert.equal(element('login-panel').hidden,false);
  await element('csv').onchange({target:{files:[{text(){assert.fail('CSV processing is locked before login');}}]}});
  const submit = key => {
@@ -143,8 +164,20 @@ test('administrator dashboard requires a successful server password check and lo
  assert.equal(element('dashboard').inert,false);
  assert.equal(element('login-panel').hidden,true);
  assert.equal(element('kpis').children.length,3);
+ const charts=element('charts');
+ assert.equal(charts.children.length,4);
+ assert.equal(charts.children[0].children[0].textContent,'Genres listened to when stressed');
+ const plotCard = card => card.children.find(child=>child.className==='chart-frame');
+ assert.ok(charts.children.every(card=>plotCard(card)?.children[0].tag==='svg' && card.children.at(-1).className==='insight'));
+ assert.equal(element('table-body').children.length,fields.length);
+ await element('csv').onchange({target:{files:[{text:async()=>listeningCsv}]}});
+ assert.equal(charts.children.length,4);
+ assert.equal(charts.children[0].children[0].textContent,'Age group × genre listened to when stressed');
+ assert.equal(charts.children[0].children.at(-1).textContent,'3 cells tie for the largest count at 1 each, out of 3 genre answers.');
  assert.equal(element('key').value,'');
  element('sign-out').onclick();
  assert.equal(element('dashboard').hidden,true);
  assert.equal(element('kpis').children.length,0);
+ assert.equal(charts.children.length,0);
+ assert.equal(element('table-body').children.length,0);
 });
