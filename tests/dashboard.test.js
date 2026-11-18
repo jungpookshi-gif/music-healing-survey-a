@@ -14,6 +14,11 @@ test('CSV excludes old versions and duplicates, counts zero and conditional miss
  assert.equal(mean(summary.counts.genre_like),null);assert.deepEqual(summary.stressByFrequency.never,{n:1,sum:0});
  assert.equal(fromCsv(header).summary.total,0);assert.throws(()=>fromCsv('x,y\n1,2'));assert.deepEqual(parseCsv('"a,b","c""d"'),[['a,b','c"d']]);
 });
+test('earlier responses over age 65 remain in CSV analysis', () => {
+ const {summary,excluded} = fromCsv(header+'\n'+sample.replace(',24,',',72,'));
+ assert.equal(summary.counts.age[72],1);
+ assert.equal(excluded,0);
+});
 test('revised questionnaire rejects contradictory skip patterns',()=>{
  const genre=fields.find(f=>f.key==='stress_genre'),like=fields.find(f=>f.key==='genre_like');
  assert.equal(validAnswer(genre,{stress_genre:'pop',stress_frequency:'no_stress'}),false);
@@ -32,7 +37,8 @@ test('server validates v2, denies unauthenticated statistics, and summarizes the
 
 test('collector preserves old rows and stores optional details once, outside aggregates', () => {
  const headers = [...header.split(','),'',''];
- const rows = [headers,['old','','','ko',VERSION,true,24,'na','kr','',0,'never','none','','',0]];
+ const priorId = 'ab60fbc1-7377-4161-9bd7-bcec46df2b25';
+ const rows = [headers,[priorId,'','','ko',VERSION,true,72,'na','kr','',0,'never','none','','',0]];
  const tab = {
    getLastRow: () => rows.length,
    getMaxColumns: () => headers.length,
@@ -40,7 +46,7 @@ test('collector preserves old rows and stores optional details once, outside agg
    getDataRange: () => ({getValues: () => rows}),
    getRange(row, column, _height, width) {
      return {
-       getValues: () => [rows[row-1].slice(column-1,column-1+width)],
+       getValues: () => [Array.from({length:width},(_,i)=>rows[row-1][column-1+i]??'')],
        setValues: ([values]) => values.forEach((value,i) => { rows[row-1][column-1+i] = value; }),
        setNumberFormat() {},
        createTextFinder(id) {
@@ -72,6 +78,15 @@ test('collector preserves old rows and stores optional details once, outside agg
  assert.equal(rows[1].length,16);
  assert.equal(env.store_(payload).detailsSaved,true);
  assert.equal(env.store_({...payload, details:{feedback:'different'}}).detailsSaved,false);
+ const upperBoundary = {...payload.answers,age:65};
+ assert.doesNotThrow(() => env.validate_({...payload,answers:upperBoundary}));
+ assert.throws(() => env.validate_({...payload,answers:{...payload.answers,age:17}}));
+ assert.throws(() => env.validate_({...payload,answers:{...payload.answers,age:66}}));
+ const pastAge = {...payload.answers,age:72};
+ assert.equal(env.store_({...payload,id:priorId,answers:pastAge,details:{}}).detailsSaved,true);
+ const blocked = env.store_({...payload,id:'aa442c28-d60f-428a-aab5-05f026c8fe05',answers:pastAge});
+ assert.equal(blocked.ok,false);
+ assert.equal(blocked.error,'age');
  assert.equal(rows.length,3);
  assert.throws(() => env.validate_({...payload, details:{feedback:'a'.repeat(1001)}}));
  assert.throws(() => env.validate_({...payload, details:{email:'unrequested'}}));

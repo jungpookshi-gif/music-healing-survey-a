@@ -15,7 +15,8 @@ const CHOICES = {
   stress_genre: ['pop','ballad','classical_piano','lofi_ambient','rock_metal','hiphop_rnb','traditional','other','none'],
   purpose: ['destress','study_work','sleep','commute','entertain','other','none']
 };
-const LIMITS = {age:[18,120],listen_min:[0,1440],genre_like:[0,10],stress_week:[0,10]};
+const LIMITS = {age:[18,65],listen_min:[0,1440],genre_like:[0,10],stress_week:[0,10]};
+const PREVIOUS_MAX_AGE = 120;
 
 function workbook_() { return SpreadsheetApp.openById(SHEET_ID); }
 
@@ -40,8 +41,8 @@ function setup() {
 function json_(value) {
   return ContentService.createTextOutput(JSON.stringify(value)).setMimeType(ContentService.MimeType.JSON);
 }
-function doGet() { return json_({service:VERSION, detailsSupported:true}); }
-function validate_(data) {
+function doGet() { return json_({service:VERSION, detailsSupported:true, ageRange:LIMITS.age}); }
+function validate_(data, maxAge = LIMITS.age[1]) {
   if (!data || data.schema !== VERSION || data.consent !== true ||
       !['vi','ko','en','zh','mn'].includes(data.language) ||
       !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(data.id) ||
@@ -56,7 +57,7 @@ function validate_(data) {
       continue;
     }
     if (CHOICES[k] && !CHOICES[k].includes(a[k])) throw Error('choice');
-    if (LIMITS[k] && (!Number.isInteger(a[k]) || a[k]<LIMITS[k][0] || a[k]>LIMITS[k][1])) throw Error('range');
+    if (LIMITS[k] && (!Number.isInteger(a[k]) || a[k]<LIMITS[k][0] || a[k]>(k === 'age' ? maxAge : LIMITS[k][1]))) throw Error('range');
   }
   if (['never','no_stress'].includes(a.stress_frequency) !== (a.stress_genre === 'none') ||
       (a.stress_genre === 'none' && a.genre_like != null)) throw Error('inapplicable');
@@ -87,7 +88,8 @@ function detailText_(value) {
 }
 
 function store_(data) {
-  validate_(data);
+  // Accept retries of responses already saved under the former age limit.
+  validate_(data, PREVIOUS_MAX_AGE);
   const lock = LockService.getScriptLock();
   lock.waitLock(15000);
   try {
@@ -103,6 +105,7 @@ function store_(data) {
       });
       return {ok:true,id:data.id,detailsSaved};
     }
+    if (data.answers.age > LIMITS.age[1]) return {ok:false,error:'age'};
     const values = KEYS.map(k => data.answers[k] == null ? '' : data.answers[k]);
     const details = DETAIL_KEYS.map(k => detailText_(data.details?.[k]));
     tab.appendRow([data.id,new Date().toISOString(),new Date(data.submittedAt).toISOString(),data.language,VERSION,true].concat(values,details));

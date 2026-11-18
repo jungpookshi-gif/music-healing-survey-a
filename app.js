@@ -1,6 +1,6 @@
 import {fields, options} from './schema.js?v=3';
-import {text} from './i18n.js?v=3';
-import {validAnswer, makePayload, noStressListening, detailLimits} from './logic.js?v=3';
+import {text} from './i18n.js?v=4';
+import {validAnswer, makePayload, noStressListening, detailLimits, ageRange} from './logic.js?v=4';
 import {createPlayer} from './music.js?v=3';
 
 const languages = ['vi', 'ko', 'en', 'zh', 'mn'];
@@ -109,11 +109,10 @@ function render() {
 
 function renderIntro() {
   app.innerHTML = `<div class="card">
-    <div class="eyebrow">${t('tag')}</div>
     <h1>${t('studyTitle')}</h1>
     <p>${t('desc')}</p>
     <p class="help">${t('privacy')}</p>
-    <div class="notice">${t(endpoint ? 'online' : 'offline')}</div>
+    ${endpoint ? '' : `<div class="notice">${t('offline')}</div>`}
     <label class="consent"><input id="consent" type="checkbox" ${consent ? 'checked' : ''}><span>${t('consent')}</span></label>
     <button id="start" class="primary" ${consent ? '' : 'disabled'}>${t('start')} →</button>
   </div>`;
@@ -151,7 +150,7 @@ function renderQuestion() {
   } else if (field.type === 'number') {
     const age = field.key === 'age';
     control.innerHTML = `<input id="answer" aria-labelledby="question" type="number" inputmode="numeric"
-      min="${age ? 18 : 0}" max="${age ? 120 : 1440}" step="1" value="${esc(value ?? '')}">
+      min="${age ? ageRange.min : 0}" max="${age ? ageRange.max : 1440}" step="1" value="${esc(value ?? '')}">
       <p class="help">${t(age ? 'ageHint' : 'listenHint')}</p>`;
     const input = control.querySelector('input');
     input.oninput = () => setAnswer(field.key, input.value === '' ? null : Number(input.value));
@@ -236,7 +235,8 @@ function confirmOnEnter(event) {
 function nextQuestion() {
   const field = fields[step];
   if (!validAnswer(field, answers)) {
-    app.querySelector('#error').textContent = t(field.type === 'number' ? 'number' : 'choose');
+    const message = field.key === 'age' ? 'ageError' : field.type === 'number' ? 'number' : 'choose';
+    app.querySelector('#error').textContent = t(message);
     return;
   }
   show(step + 1);
@@ -280,12 +280,14 @@ function renderDetails() {
 
 async function submit() {
   if (submitting) return;
-  const missing = fields.findIndex(field => !validAnswer(field, answers));
-  if (missing !== -1) {
-    show(missing);
-    return;
+  if (!result || !endpoint) {
+    const missing = fields.findIndex(field => !validAnswer(field, answers));
+    if (missing !== -1) {
+      show(missing);
+      return;
+    }
+    result = makePayload(answers, lang, details);
   }
-  if (!result || !endpoint) result = makePayload(answers, lang, details);
   if (endpoint) {
     submitting = true;
     failed = false;
@@ -301,6 +303,13 @@ async function submit() {
         redirect: 'follow'
       });
       const body = await response.json();
+      if (response.ok && body.error === 'age' && result.answers.age > ageRange.max) {
+        result = null;
+        remember();
+        show(0);
+        app.querySelector('#error').textContent = t('ageError');
+        return;
+      }
       if (!response.ok || body.ok !== true || body.id !== result.id ||
         (Object.keys(result.details ?? {}).length && body.detailsSaved !== true)) throw Error('Unconfirmed');
       receipt = true;

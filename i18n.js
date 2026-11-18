@@ -6,40 +6,26 @@ export const text = {
     "音乐与感受",
     "Хөгжим ба мэдрэмж"
   ],
-  "tag": [
-    "KHẢO SÁT A · BẢN ĐỘC LẬP",
-    "설문 A · 독립 프로젝트",
-    "SURVEY A · STANDALONE",
-    "问卷 A · 独立项目",
-    "СУДАЛГАА A · БИЕ ДААСАН ТӨСӨЛ"
-  ],
-  "intro": [
-    "Một chút về bạn. Một chút về âm nhạc.",
-    "당신의 일상과 음악 이야기를 들려주세요.",
-    "Your everyday life. Your relationship with music.",
-    "聊聊您的日常与音乐。",
-    "Таны өдөр тутмын амьдрал ба хөгжим."
-  ],
   "desc": [
-    "Khảo sát dành cho người từ 18 tuổi. Chúng tôi tìm hiểu mối liên hệ giữa thói quen nghe nhạc và cảm nhận căng thẳng trong 7 ngày qua. Hãy trả lời 10 câu theo trải nghiệm của bạn. Bạn có thể tắt nhạc nền bất cứ lúc nào.",
-    "만 18세 이상을 대상으로 지난 7일의 음악 청취 습관과 체감 스트레스의 관련성을 살펴봅니다. 본인의 경험에 맞게 10개 문항에 답해 주세요. 배경음악은 언제든 끌 수 있습니다.",
-    "This survey is for adults aged 18 or older. We study how music listening relates to perceived stress over the past 7 days. Answer 10 questions about your own experience. You can turn the background music off at any time.",
-    "本问卷面向年满18岁的人士，旨在了解过去7天听音乐习惯与自我感受压力之间的关系。请根据自身经历回答10个问题。您可以随时关闭背景音乐。",
-    "Энэхүү судалгаа 18 ба түүнээс дээш насныханд зориулагдсан. Өнгөрсөн 7 хоногийн хөгжим сонсох дадал, мэдэрсэн стрессийн холбоог судална. Өөрийн туршлагад тулгуурлан 10 асуултад хариулна уу. Асуулт бөглөх үеийн аяыг хүсвэл унтрааж болно."
+    "Khảo sát dành cho người từ 18 đến 65 tuổi. Hãy trả lời 10 câu về thói quen nghe nhạc và mức độ căng thẳng của bạn trong 7 ngày qua. Bạn có thể tắt nhạc nền bất cứ lúc nào.",
+    "만 18~65세가 참여할 수 있습니다. 지난 7일 동안의 음악 청취 습관과 느낀 스트레스에 관한 10개 문항에 답해 주세요. 배경음악은 언제든 끌 수 있습니다.",
+    "This survey is for people aged 18 to 65. Answer 10 questions about your listening habits and stress over the past 7 days. You can turn off the background music at any time.",
+    "本问卷面向18至65周岁的人士。请回答10道关于过去7天听音乐习惯和压力感受的问题。您可以随时关闭背景音乐。",
+    "Судалгаанд 18–65 насны хүн оролцож болно. Өнгөрсөн 7 хоногийн хөгжим сонсох дадал, мэдэрсэн стрессийн тухай 10 асуултад хариулна уу. Дэвсгэр хөгжмийг хүссэн үедээ унтрааж болно."
   ],
   "consent": [
-    "Tôi từ 18 tuổi trở lên, đã đọc thông tin và tự nguyện tham gia. Tôi có thể dừng bất cứ lúc nào.",
-    "본인은 만 18세 이상이며 안내를 읽고 자발적으로 참여합니다. 언제든 중단할 수 있습니다.",
-    "I am at least 18, have read the information, and participate voluntarily. I may stop at any time.",
-    "我已满18岁，已阅读说明并自愿参与，可随时退出。",
-    "Би 18 ба түүнээс дээш настай, мэдээллийг уншсан бөгөөд сайн дураараа оролцож байна. Хэзээ ч оролцохоо зогсоож болно."
+    "Tôi từ 18 đến 65 tuổi và tự nguyện tham gia. Tôi có thể dừng trước khi gửi.",
+    "본인은 만 18~65세이며 자발적으로 참여합니다. 제출하기 전에는 언제든 중단할 수 있습니다.",
+    "I am aged 18 to 65 and choose to take part. I can stop before submitting.",
+    "我的年龄在18至65周岁之间，自愿参加，并可在提交前退出。",
+    "Би 18–65 настай бөгөөд сайн дураараа оролцож байна. Хариултаа илгээхээс өмнө хүссэн үедээ зогсоож болно."
   ],
   "privacy": [
-    "Bạn có thể để trống tên và góp ý. Chúng tôi không hỏi email. Câu trả lời được giữ tạm trong thẻ trình duyệt để bạn có thể quay lại chỉnh sửa. Đây là khảo sát tự báo cáo, không dùng để chẩn đoán.",
-    "이름과 의견은 선택 항목입니다. 이메일은 수집하지 않습니다. 이전 문항을 수정할 수 있도록 답변을 브라우저 탭에 임시 보관합니다. 자기보고 설문이며 진단에 사용하지 않습니다.",
-    "Your name and feedback are optional. We do not ask for your email. Answers are temporarily kept in this browser tab so you can review them. This is a self-report survey and is not used for diagnosis.",
-    "姓名和反馈为选填项。我们不会收集电子邮箱。答案暂存在本浏览器标签页中，便于返回修改。本问卷为自我报告，不用于诊断。",
-    "Нэр, санал хүсэлтээ бичих эсэх нь таны сонголт. Цахим шуудангийн хаяг асуухгүй. Хариултыг засах боломжтой байлгахын тулд энэ хөтчийн табд түр хадгална. Судалгаа нь өөрийн мэдүүлэгт үндэслэх бөгөөд оношилгоонд зориулагдаагүй."
+    "Tên và góp ý ở cuối khảo sát là tùy chọn.",
+    "마지막의 이름과 의견은 선택 항목입니다.",
+    "Name and feedback at the end are optional.",
+    "问卷末尾的姓名和反馈为选填项。",
+    "Төгсгөлд нэр, санал хүсэлтээ бичих эсэхээ өөрөө сонгоно."
   ],
   "offline": [
     "Chưa bật thu thập trực tuyến. Bạn có thể xem thử và tải câu trả lời về máy; dữ liệu chưa được gửi cho nhóm nghiên cứu.",
@@ -47,13 +33,6 @@ export const text = {
     "Online collection is not connected. You can try the survey and download your answers; they are not sent to the research team.",
     "尚未连接在线收集。您可以试填并下载答案，但答案不会发送给研究团队。",
     "Онлайнаар хариулт хүлээн авах тохиргоо идэвхгүй байна. Та бөглөж үзээд хариултаа татаж авах боломжтой. Хариулт судалгааны багт илгээгдэхгүй."
-  ],
-  "online": [
-    "Câu trả lời sẽ được gửi tới bảng dữ liệu riêng của khảo sát này khi bạn bấm Gửi.",
-    "제출하면 응답이 이 설문의 전용 데이터 시트로 전송됩니다.",
-    "Submitting sends your answers to this survey’s dedicated data sheet.",
-    "提交后，答案将发送至本问卷的专用数据表。",
-    "«Илгээх» товчийг дарахад хариулт судалгааны тусгай хүснэгтэд очно."
   ],
   "start": [
     "Bắt đầu khảo sát",
@@ -244,13 +223,6 @@ export const text = {
     "请选择最符合您自身经历的答案。",
     "Өөрийн туршлагад хамгийн ойр хариултыг сонгоно уу."
   ],
-  "bounds": [
-    "Tuổi: từ 18 trở lên. Thời gian nghe: 0–1440 phút/ngày.",
-    "나이: 만 18세 이상. 청취 시간: 하루 0–1440분.",
-    "Age: 18 or above. Listening time: 0–1440 minutes/day.",
-    "年龄：18岁及以上。听音乐时长：每天0–1440分钟。",
-    "Нас: 18-аас дээш. Хөгжим сонсох хугацаа: өдөрт 0–1440 минут."
-  ],
   "inapp": [
     "Dựa trên câu 6, câu này không áp dụng.",
     "6번 응답에 따라 이 문항은 해당하지 않습니다.",
@@ -259,11 +231,11 @@ export const text = {
     "6-р асуултын хариултаас шалтгаалан энэ асуулт танд хамаарахгүй."
   ],
   "ageHint": [
-    "Từ 18 đến 120 tuổi.",
-    "만 18–120세",
-    "18–120 years",
-    "18至120周岁",
-    "18-аас 120 хүртэлх нас."
+    "Từ 18 đến 65 tuổi.",
+    "만 18~65세",
+    "Ages 18 to 65.",
+    "18至65周岁。",
+    "18-аас 65 хүртэлх нас."
   ],
   "listenHint": [
     "0–1440 phút/ngày.",
@@ -369,5 +341,12 @@ export const text = {
     "Submitting…",
     "正在提交…",
     "Илгээж байна…"
+  ],
+  "ageError": [
+    "Vui lòng nhập tuổi tròn từ 18 đến 65.",
+    "만 18~65세 범위에서 나이를 정수로 입력해 주세요.",
+    "Enter a whole age from 18 to 65.",
+    "请输入18至65之间的整数周岁年龄。",
+    "Бүтэн насаа 18-аас 65 хүртэлх бүхэл тоогоор оруулна уу."
   ]
 };

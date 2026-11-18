@@ -2,13 +2,13 @@
 
 [Survey](https://jungpookshi-gif.github.io/music-healing-survey-a/) · [Research dashboard](https://jungpookshi-gif.github.io/music-healing-survey-a/admin/) · [Participant information and invitations in five languages](materials/recruitment.md)
 
-This standalone adult survey contains 10 questions in Vietnamese, Korean, English Simplified Chinese and Mongolian. At the end, the participant can optionally give a name and feedback. Names and feedback are stored with the response and excluded from dashboard aggregates. Instrument version `music-healing-survey-a/v2` covers current age, gender, country of residence, study/paid employment, daily listening minutes, frequency of listening when stressed, genre, listening purpose, liking and overall perceived stress.
+This standalone survey for people aged 18 to 65 contains 10 questions in Vietnamese, Korean, English Simplified Chinese and Mongolian. At the end, the participant can optionally give a name and feedback. Names and feedback are stored with the response and excluded from dashboard aggregates. Instrument version `music-healing-survey-a/v2` covers current age, gender, country of residence, study/paid employment, daily listening minutes, frequency of listening when stressed, genre, listening purpose, liking and overall perceived stress.
 
 ## Questionnaire changes
 
 | Item | Research decision |
 |---|---|
-| A01, A02 | Record completed years and allow respondents to decline the gender item. |
+| A01, A02 | Accept completed ages 18–65 in new submissions and allow respondents to decline the gender item. |
 | A03 | Ask country of current residence. Country, nationality and cultural identity are different variables. Retain Mongolia, Myanmar and Nepal, and include China. |
 | A04 | Distinguish study only, paid work only, both, neither, and other situations. |
 | A05 | Average listening minutes over all seven days, including zero-listening days. |
