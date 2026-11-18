@@ -16,26 +16,30 @@ test('the invitation link opens a fresh survey with only the chosen language', (
 });
 
 function shareControls() {
+  const toggle = () => ({hidden:true,setAttribute(name,value){this[name]=value;}});
   const nodes = {
-    '#share-survey': {setAttribute(name,value){this[name]=value;}},
-    '#share-platforms': {hidden:true}, '#share-other-apps': {hidden:true},
+    '#share-survey': toggle(), '#share-platform-options': toggle(),
+    '#share-platforms': {hidden:true}, '#share-device-hint': {hidden:true},
     '#share-kakao': {}, '#share-facebook': {}, '#share-whatsapp': {}, '#share-line': {}, '#share-status': {}
   };
   return {nodes, section:{querySelector:selector=>nodes[selector]}};
 }
 
-test('the share button presents platforms and the system picker receives only the public URL', async () => {
+test('the share button calls the system picker immediately with only the public URL', async () => {
   const {nodes,section}=shareControls();
   const url='https://example.test/survey/?lang=vi';
   let shared;
   connectSurveyShare(section,url,key=>key,{device:{share:async data=>{shared=data;}}});
   assert.equal(nodes['#share-platforms'].hidden,true);
-  await nodes['#share-survey'].onclick();
-  assert.equal(nodes['#share-platforms'].hidden,false);
-  assert.equal(shared,undefined);
-  assert.equal(nodes['#share-other-apps'].hidden,false);
-  await nodes['#share-other-apps'].onclick();
+  assert.equal(nodes['#share-device-hint'].hidden,false);
+  assert.equal(nodes['#share-platform-options'].hidden,false);
+  const sharing=nodes['#share-survey'].onclick();
   assert.deepEqual(shared,{url});
+  await sharing;
+  assert.equal(nodes['#share-platforms'].hidden,true);
+  nodes['#share-platform-options'].onclick();
+  assert.equal(nodes['#share-platforms'].hidden,false);
+  assert.equal(nodes['#share-platform-options']['aria-expanded'],'true');
 });
 
 test('chat platform links work even when a device share picker is unavailable', async () => {
@@ -43,13 +47,14 @@ test('chat platform links work even when a device share picker is unavailable', 
   const clipboard={writeText(){assert.fail('Sharing must never copy');}};
   for (const device of [
     {clipboard},
-    {clipboard,share:async()=>{throw new DOMException('No targets','AbortError');}}
+    {clipboard,share:async()=>{throw new DOMException('Sharing blocked','NotAllowedError');}}
   ]) {
     const {nodes,section}=shareControls();
     connectSurveyShare(section,url,key=>key,{device});
     await nodes['#share-survey'].onclick();
     assert.equal(nodes['#share-platforms'].hidden,false);
     assert.equal(nodes['#share-survey']['aria-expanded'],'true');
+    assert.equal(nodes['#share-status'].textContent,'shareAppsUnavailable');
     await nodes['#share-kakao'].onclick();
     assert.equal(nodes['#share-status'].textContent,'shareKakaoUnavailable');
     const facebook=new URL(nodes['#share-facebook'].href);
@@ -62,6 +67,16 @@ test('chat platform links work even when a device share picker is unavailable', 
     assert.equal(line.origin+line.pathname,'https://line.me/R/share');
     assert.equal(line.searchParams.get('text'),url);
   }
+});
+
+test('dismissing the phone share menu keeps platform alternatives available without an error', async () => {
+  const {nodes,section}=shareControls();
+  connectSurveyShare(section,'https://example.test/survey/',key=>key,{
+    device:{share:async()=>{throw new DOMException('Cancelled','AbortError');}}
+  });
+  await nodes['#share-survey'].onclick();
+  assert.equal(nodes['#share-platforms'].hidden,false);
+  assert.equal(nodes['#share-status'].textContent,'');
 });
 
 test('KakaoTalk uses the device picker when the SDK is not configured', async () => {

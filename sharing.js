@@ -32,7 +32,8 @@ export function loadKakaoShare(key, browser = window) {
 export function connectSurveyShare(section, url, t, {device = navigator, kakao = null} = {}) {
   const share = section.querySelector('#share-survey');
   const platforms = section.querySelector('#share-platforms');
-  const system = section.querySelector('#share-other-apps');
+  const alternatives = section.querySelector('#share-platform-options');
+  const hint = section.querySelector('#share-device-hint');
   const kakaoButton = section.querySelector('#share-kakao');
   const status = section.querySelector('#share-status');
   const supportsNative = typeof device.share === 'function';
@@ -43,20 +44,31 @@ export function connectSurveyShare(section, url, t, {device = navigator, kakao =
   const message = encodeURIComponent(url);
   section.querySelector('#share-whatsapp').href = 'https://wa.me/?text=' + message;
   section.querySelector('#share-line').href = 'https://line.me/R/share?text=' + message;
-  system.hidden = !supportsNative;
+  alternatives.hidden = !supportsNative;
+  hint.hidden = !supportsNative;
 
   function showPlatforms() {
     platforms.hidden = false;
     share.setAttribute('aria-expanded', 'true');
+    alternatives.setAttribute('aria-expanded', 'true');
   }
 
-  async function shareWithDevice() {
-    status.textContent = '';
-    try {
-      await device.share({url});
-    } catch (error) {
-      if (error?.name !== 'AbortError') status.textContent = t('shareAppsUnavailable');
+  async function shareWithDevice(unavailableMessage, prompt = '') {
+    status.textContent = prompt;
+    if (supportsNative) {
+      try {
+        await device.share({url});
+        return;
+      } catch (error) {
+        if (error?.name === 'AbortError') {
+          status.textContent = '';
+          showPlatforms();
+          return;
+        }
+      }
     }
+    showPlatforms();
+    status.textContent = t(unavailableMessage);
   }
 
   let kakaoShare = null;
@@ -64,22 +76,17 @@ export function connectSurveyShare(section, url, t, {device = navigator, kakao =
 
   kakaoButton.onclick = async () => {
     status.textContent = '';
-    try {
-      if (kakaoShare) {
+    if (kakaoShare) {
+      try {
         await kakaoShare(url);
         return;
+      } catch {
+        // Keep device sharing available if the SDK cannot open its picker.
       }
-      if (supportsNative) {
-        status.textContent = t('shareKakaoChoose');
-        await device.share({url});
-        return;
-      }
-    } catch {
-      // A browser can block the share picker even when it exposes share().
     }
-    status.textContent = t('shareKakaoUnavailable');
+    await shareWithDevice('shareKakaoUnavailable', supportsNative ? t('shareKakaoChoose') : '');
   };
 
-  system.onclick = shareWithDevice;
-  share.onclick = showPlatforms;
+  alternatives.onclick = showPlatforms;
+  share.onclick = () => shareWithDevice('shareAppsUnavailable');
 }

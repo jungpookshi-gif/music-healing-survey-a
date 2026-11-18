@@ -370,12 +370,19 @@ export const text = {
     "请选择分享平台。",
     "Хуваалцах аппаа сонгоно уу."
   ],
-  "otherShareApps": [
-    "Ứng dụng khác",
-    "다른 앱",
-    "Other apps",
-    "其他应用",
-    "Бусад апп"
+  "shareDeviceHint": [
+    "Chọn Messenger, KakaoTalk hoặc ứng dụng khác trong menu chia sẻ của thiết bị.",
+    "기기의 공유 메뉴에서 Messenger, 카카오톡 또는 다른 앱을 선택하세요.",
+    "Choose Messenger, KakaoTalk or another app from your device’s share menu.",
+    "在设备的分享菜单中选择 Messenger、KakaoTalk 或其他应用。",
+    "Төхөөрөмжийн хуваалцах цэснээс Messenger, KakaoTalk эсвэл өөр апп сонгоно уу."
+  ],
+  "sharePlatformOptions": [
+    "Các cách chia sẻ khác",
+    "다른 공유 방법",
+    "Other ways to share",
+    "其他分享方式",
+    "Хуваалцах бусад арга"
   ],
   "shareKakaoUnavailable": [
     "Không mở được KakaoTalk từ trình duyệt này. Hãy mở trang trong Chrome hoặc Safari rồi chọn KakaoTalk trong menu chia sẻ nếu có.",
@@ -385,11 +392,11 @@ export const text = {
     "Энэ хөтчөөс KakaoTalk-аар хуваалцах боломжгүй байна. Хуудсыг Chrome эсвэл Safari-д нээгээд хуваалцах цэсэнд KakaoTalk байвал сонгоно уу."
   ],
   "shareAppsUnavailable": [
-    "Menu chia sẻ của thiết bị không mở được. Bạn có thể chọn một ứng dụng ở trên.",
-    "기기의 공유 메뉴를 열 수 없습니다. 위 목록에서 공유할 앱을 선택할 수 있습니다.",
-    "The device share menu could not open. Choose an app from the list above.",
-    "无法打开设备的分享菜单。请从上方列表选择应用。",
-    "Төхөөрөмжийн хуваалцах цэс нээгдсэнгүй. Дээрх жагсаалтаас апп сонгоно уу."
+    "Chọn một ứng dụng ở trên. Để dùng Messenger hoặc KakaoTalk, bạn cũng có thể mở trang trong Chrome hoặc Safari và dùng menu chia sẻ của trình duyệt.",
+    "위 목록에서 앱을 선택하세요. Messenger나 카카오톡을 이용하려면 이 페이지를 Chrome이나 Safari에서 열고 브라우저의 공유 메뉴를 사용할 수도 있습니다.",
+    "Choose an app above. For Messenger or KakaoTalk, you can also open this page in Chrome or Safari and use the browser’s share menu.",
+    "请选择上方的应用。如需使用 Messenger 或 KakaoTalk，也可以在 Chrome 或 Safari 中打开此页并使用浏览器的分享菜单。",
+    "Дээрх аппуудаас сонгоно уу. Messenger эсвэл KakaoTalk ашиглах бол энэ хуудсыг Chrome эсвэл Safari-д нээгээд хөтчийн хуваалцах цэсийг ашиглаж болно."
   ],
   "shareKakaoChoose": [
     "Chọn KakaoTalk trong menu chia sẻ.",
