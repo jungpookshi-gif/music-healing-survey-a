@@ -31,9 +31,9 @@ The public website starts in preview mode whenever `config.js` has an empty endp
 
 Single-choice answers advance after a confirmed selection. Scales advance when the pointer is released. For typed numbers, press Enter or Next to finish entering the value. The last page contains the optional name and feedback and requires an explicit submission.
 
-**Slow Morning** is an original 64-second instrumental loop, generated for this survey. It starts at 25% player volume after the participant clicks Start and stops at completion. Participants can independently pause playback, adjust volume, or suspend vinyl motion. Music during completion of the questionnaire is a change in survey conditions to consider when comparing responses across rollout dates.
+**Still Harbor** is an original 69-second instrumental loop with soft keys and sustained tones. It starts at 20% player volume after the participant clicks Start and stops at completion. Participants can independently pause playback, adjust volume, or suspend vinyl motion. Music during completion of the questionnaire is a change in survey conditions to consider when comparing responses across rollout dates.
 
-The result page displays a built-in cover. To replace it, add the approved artwork to `media/` and set its relative path as `coverImage` in `config.js`.
+After an online submission is confirmed, the result page offers the device sharing menu where supported and a copy button. The shared URL opens a new survey in the selected language and carries no response data. The result page displays a built-in cover. To replace it, add the approved artwork to `media/` and set its relative path as `coverImage` in `config.js`.
 
 ## Development
 

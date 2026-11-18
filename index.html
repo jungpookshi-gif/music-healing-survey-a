@@ -4,9 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#eeeafa">
-  <meta name="description" content="Music Healing Survey A — a standalone 10-question multilingual survey about music and perceived stress.">
+  <meta name="description" content="A short survey for people aged 18 to 65 about music listening and stress over the past 7 days.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Music Healing · Survey A">
+  <meta property="og:description" content="Answer 10 short questions about music listening and stress over the past 7 days. Ages 18–65.">
   <title>Music Healing · Survey A</title>
-  <link rel="stylesheet" href="style.css?v=4">
+  <link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
   <header>
@@ -24,15 +27,15 @@
     </section>
     <button id="motion" class="quiet"></button>
     <section id="music-player" hidden>
-      <audio src="media/slow-morning.mp3" preload="none" loop></audio>
+      <audio src="media/still-harbor.mp3" preload="none" loop></audio>
       <button id="music-toggle" type="button" class="secondary" aria-controls="music-status"></button>
-      <div class="volume-control"><label for="music-volume"></label><input id="music-volume" type="range" min="0" max="100" value="25"></div>
+      <div class="volume-control"><label for="music-volume"></label><input id="music-volume" type="range" min="0" max="100" value="20"></div>
       <span id="music-status" role="status"></span>
     </section>
     <section id="app"></section>
   </main>
   <footer>Music Healing · Survey A <span id="question-count">10 câu hỏi</span><a id="research-link" href="./admin/">Quản trị</a></footer>
   <script src="config.js?v=3"></script>
-  <script type="module" src="app.js?v=4"></script>
+  <script type="module" src="app.js?v=5"></script>
 </body>
 </html>

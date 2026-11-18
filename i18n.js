@@ -348,5 +348,75 @@ export const text = {
     "Enter a whole age from 18 to 65.",
     "请输入18至65之间的整数周岁年龄。",
     "Бүтэн насаа 18-аас 65 хүртэлх бүхэл тоогоор оруулна уу."
+  ],
+  "shareHeading": [
+    "Mời bạn bè tham gia",
+    "친구에게 설문 공유하기",
+    "Invite friends to take the survey",
+    "邀请朋友参加问卷",
+    "Найзуудаа судалгаанд урих"
+  ],
+  "shareHelp": [
+    "Chia sẻ đường dẫn qua Messenger, KakaoTalk, Instagram hoặc ứng dụng khác.",
+    "Messenger, 카카오톡, Instagram 등에서 설문 링크를 공유할 수 있습니다.",
+    "Share the survey link in Messenger, KakaoTalk, Instagram or another app.",
+    "可通过 Messenger、KakaoTalk、Instagram 或其他应用分享问卷链接。",
+    "Судалгааны холбоосыг Messenger, KakaoTalk, Instagram болон бусад апп-аар хуваалцаарай."
+  ],
+  "shareSurvey": [
+    "Chia sẻ khảo sát",
+    "설문 공유",
+    "Share survey",
+    "分享问卷",
+    "Судалгааг хуваалцах"
+  ],
+  "copyLink": [
+    "Sao chép liên kết",
+    "링크 복사",
+    "Copy link",
+    "复制链接",
+    "Холбоос хуулах"
+  ],
+  "surveyLink": [
+    "Liên kết khảo sát",
+    "설문 링크",
+    "Survey link",
+    "问卷链接",
+    "Судалгааны холбоос"
+  ],
+  "shareTitle": [
+    "Khảo sát Music Healing",
+    "Music Healing 설문",
+    "Music Healing Survey",
+    "Music Healing 问卷",
+    "Music Healing судалгаа"
+  ],
+  "inviteText": [
+    "Mời bạn tham gia khảo sát ngắn về thói quen nghe nhạc và căng thẳng trong 7 ngày qua. Khảo sát dành cho người từ 18 đến 65 tuổi.",
+    "지난 7일 동안의 음악 청취 습관과 스트레스에 관한 짧은 설문에 참여해 주세요. 만 18~65세가 참여할 수 있습니다.",
+    "Take a short survey about music listening and stress over the past 7 days. Open to people aged 18 to 65.",
+    "欢迎参加关于过去7天听音乐习惯和压力感受的简短问卷。适合18至65周岁的人士。",
+    "Өнгөрсөн 7 хоногийн хөгжим сонсох дадал, стрессийн тухай богино судалгаанд оролцоорой. 18–65 насныханд нээлттэй."
+  ],
+  "linkCopied": [
+    "Đã sao chép. Bạn có thể dán liên kết vào cuộc trò chuyện.",
+    "링크를 복사했습니다. 대화창에 붙여 넣을 수 있습니다.",
+    "Link copied. You can paste it into a chat.",
+    "链接已复制，可以粘贴到聊天中。",
+    "Холбоосыг хууллаа. Чатад буулгаж болно."
+  ],
+  "copyManually": [
+    "Hãy sao chép đường dẫn đã chọn và dán vào cuộc trò chuyện.",
+    "선택된 링크를 복사해 대화창에 붙여 넣으세요.",
+    "Copy the selected link and paste it into a chat.",
+    "请复制已选中的链接并粘贴到聊天中。",
+    "Сонгогдсон холбоосыг хуулж чатад буулгана уу."
+  ],
+  "shareUseCopy": [
+    "Bạn có thể sao chép liên kết để chia sẻ.",
+    "링크를 복사해 공유할 수 있습니다.",
+    "You can copy the link to share it.",
+    "您可以复制链接后分享。",
+    "Холбоосыг хуулж хуваалцаж болно."
   ]
 };

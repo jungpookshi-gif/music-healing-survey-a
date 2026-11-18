@@ -1,7 +1,8 @@
 import {fields, options} from './schema.js?v=3';
-import {text} from './i18n.js?v=4';
+import {text} from './i18n.js?v=5';
 import {validAnswer, makePayload, noStressListening, detailLimits, ageRange} from './logic.js?v=4';
 import {createPlayer} from './music.js?v=3';
+import {connectSurveyShare, surveyInviteUrl} from './sharing.js?v=5';
 
 const languages = ['vi', 'ko', 'en', 'zh', 'mn'];
 const draftKey = 'mhs-a-v2';
@@ -338,6 +339,22 @@ function download() {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+function shareSection() {
+  return `<section class="survey-share" aria-labelledby="share-title">
+    <h2 id="share-title">${t('shareHeading')}</h2>
+    <p id="share-help">${t('shareHelp')}</p>
+    <div class="share-actions">
+      <button class="primary" type="button" id="share-survey" aria-describedby="share-help" hidden>${t('shareSurvey')}</button>
+      <button class="secondary" type="button" id="copy-survey-link">${t('copyLink')}</button>
+    </div>
+    <div id="survey-link-wrap" hidden>
+      <label for="survey-link">${t('surveyLink')}</label>
+      <input id="survey-link" type="url" readonly>
+    </div>
+    <p id="share-status" role="status"></p>
+  </section>`;
+}
+
 function renderDone() {
   app.innerHTML = `<div class="card completion">
     <figure class="record-cover">
@@ -351,11 +368,13 @@ function renderDone() {
     <div class="notice">${t(receipt ? 'sent' : 'localdone')}</div>
     <div class="actions"><button class="secondary" id="edit" ${receipt ? 'disabled' : ''}>${t('edit')}</button>
       <button class="primary" id="download">${t('download')}</button></div>
+    ${receipt ? shareSection() : ''}
   </div>`;
   const image = app.querySelector('.record-sleeve img');
   if (image) image.onerror = () => image.remove();
   app.querySelector('#download').onclick = download;
   app.querySelector('#edit').onclick = () => show(0);
+  if (receipt) connectSurveyShare(app.querySelector('.survey-share'), surveyInviteUrl(location.href, lang), t);
 }
 
 for (const button of document.querySelectorAll('[data-lang]')) {
