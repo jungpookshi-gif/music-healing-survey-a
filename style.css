@@ -24,19 +24,15 @@
 @media(max-width:360px){header{flex-wrap:wrap}nav button{padding-inline:7px}}
 
 .survey-share{margin-top:28px;padding-top:23px;border-top:1px solid var(--line)}
-.survey-share h2{margin:0 0 7px;font-size:21px}
-.survey-share #share-help{margin:0 0 16px;font-size:14px}
+.survey-share h2{margin:0 0 14px;font-size:21px}
+.share-platforms{margin-top:14px}
+.share-platforms p{margin:0 0 10px;font-size:14px}
 .share-actions{display:flex;justify-content:center;flex-wrap:wrap;gap:8px}
-.share-actions button{flex:0 1 auto;padding:9px 14px;font-size:14px}
-#survey-link-wrap{margin:14px auto 0;max-width:430px;text-align:left}
-#survey-link-wrap label{display:block;margin-bottom:5px;font-size:13px}
-#survey-link{width:100%;padding:9px;border:1px solid var(--line);border-radius:9px;color:var(--ink);background:#fcfbfe;font:inherit;font-size:14px}
+.share-actions :is(button,a){display:inline-flex;align-items:center;justify-content:center;min-height:44px;flex:0 1 auto;padding:9px 14px;font-size:14px;text-decoration:none}
+.share-actions .secondary{background:#fff}
 #share-status{margin:0;font-size:13px}
 #share-status:not(:empty){margin-top:10px}
-
-.share-actions button{min-height:44px}
-#survey-link{font-size:16px}
 @media(max-width:600px){
-  .share-actions{display:grid;grid-template-columns:minmax(0,1fr)}
-  .share-actions button{width:100%}
+  #share-survey{width:100%}
+  .share-platforms .share-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
 }

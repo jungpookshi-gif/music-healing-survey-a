@@ -1,8 +1,8 @@
 import {fields, options} from './schema.js?v=3';
-import {text} from './i18n.js?v=6';
+import {text} from './i18n.js?v=7';
 import {validAnswer, makePayload, noStressListening, detailLimits, ageRange} from './logic.js?v=4';
 import {createPlayer} from './music.js?v=3';
-import {connectSurveyShare, surveyInviteUrl} from './sharing.js?v=6';
+import {connectSurveyShare, loadKakaoShare, surveyInviteUrl} from './sharing.js?v=7';
 
 const languages = ['vi', 'ko', 'en', 'zh', 'mn'];
 const draftKey = 'mhs-a-v2';
@@ -339,16 +339,19 @@ function download() {
 function shareSection() {
   return `<section class="survey-share" aria-labelledby="share-title">
     <h2 id="share-title">${t('shareHeading')}</h2>
-    <p id="share-help">${t('shareHelp')}</p>
     <div class="share-actions">
-      <button class="primary" type="button" id="share-survey" aria-describedby="share-help">${t('shareSurvey')}</button>
-      <button class="secondary" type="button" id="copy-survey-link">${t('copyLink')}</button>
+      <button class="primary" type="button" id="share-survey" aria-expanded="false" aria-controls="share-platforms">${t('shareSurvey')}</button>
     </div>
-    <div id="survey-link-wrap" hidden>
-      <label for="survey-link">${t('surveyLink')}</label>
-      <input id="survey-link" type="text" inputmode="url" readonly>
+    <div class="share-platforms" id="share-platforms" hidden>
+      <p>${t('chooseShareApp')}</p>
+      <div class="share-actions">
+        <button class="secondary" type="button" id="share-kakao" hidden>KakaoTalk</button>
+        <a class="secondary" id="share-facebook" rel="noreferrer">Facebook</a>
+        <a class="secondary" id="share-telegram" rel="noreferrer">Telegram</a>
+        <button class="secondary" type="button" id="share-other-apps" hidden>${t('otherShareApps')}</button>
+      </div>
+      <p id="share-status" role="status"></p>
     </div>
-    <p id="share-status" role="status"></p>
   </section>`;
 }
 
@@ -371,7 +374,11 @@ function renderDone() {
   if (image) image.onerror = () => image.remove();
   app.querySelector('#download').onclick = download;
   app.querySelector('#edit').onclick = () => show(0);
-  if (receipt) connectSurveyShare(app.querySelector('.survey-share'), surveyInviteUrl(location.href, lang), t);
+  if (receipt) {
+    connectSurveyShare(app.querySelector('.survey-share'), surveyInviteUrl(location.href, lang), t, {
+      kakao: loadKakaoShare(config.kakaoJavaScriptKey)
+    });
+  }
 }
 
 for (const button of document.querySelectorAll('[data-lang]')) {

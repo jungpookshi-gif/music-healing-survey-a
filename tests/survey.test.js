@@ -1,4 +1,4 @@
-import {connectSurveyShare, surveyInviteUrl} from '../sharing.js';
+import {connectSurveyShare, loadKakaoShare, surveyInviteUrl} from '../sharing.js';
 import test from 'node:test';import assert from 'node:assert/strict';import {fields,options} from '../schema.js';import {text} from '../i18n.js';import {validAnswer} from '../logic.js';
 test('exactly ten substantive questions, all translated',()=>{assert.equal(fields.length,10);assert.equal(new Set(fields.map(f=>f.key)).size,10);fields.forEach(f=>assert.equal(f.label.length,5));Object.values(text).forEach(t=>assert.equal(t.length,5));Object.values(options).flat().forEach(o=>assert.equal(o.length,6));});
 test('zero is valid, unanswered required scales are not',()=>{const f=fields.find(f=>f.key==='stress_week');assert.equal(validAnswer(f,{}),false);assert.equal(validAnswer(f,{stress_week:0}),true);for(const v of [-1,11,1.5,NaN])assert.equal(validAnswer(f,{stress_week:v}),false);});
@@ -15,61 +15,70 @@ test('the invitation link opens a fresh survey with only the chosen language', (
   assert.equal(surveyInviteUrl(page, 'ko'), 'https://example.test/music-healing-survey-a/?lang=ko');
 });
 
-test('mobile sharing uses the public URL and the same button copies when share is unavailable', async () => {
+function shareControls() {
   const nodes = {
-    '#share-survey': {}, '#copy-survey-link': {}, '#share-status': {},
-    '#survey-link-wrap': {hidden:true}, '#survey-link': {}
+    '#share-survey': {setAttribute(name,value){this[name]=value;}},
+    '#share-platforms': {hidden:true}, '#share-other-apps': {hidden:true},
+    '#share-kakao': {hidden:true}, '#share-telegram': {}, '#share-facebook': {}, '#share-status': {}
   };
-  const section = {querySelector: selector => nodes[selector]};
-  const url = 'https://example.test/survey/?lang=vi';
-  let shared, copied;
-  connectSurveyShare(section, url, key => key, {
-    canShare: () => true,
-    share: async invitation => { shared = invitation; },
-  });
-  await nodes['#share-survey'].onclick();
-  assert.deepEqual(shared, {url});
+  return {nodes, section:{querySelector:selector=>nodes[selector]}};
+}
 
-  connectSurveyShare(section, url, key => key, {
-    clipboard:{writeText:async value => { copied = value; }}
-  });
-  assert.notEqual(nodes['#share-survey'].hidden, true);
+test('the survey button gives the system share action only the public URL', async () => {
+  const {nodes,section}=shareControls();
+  const url='https://example.test/survey/?lang=vi';
+  let shared;
+  connectSurveyShare(section,url,key=>key,{device:{share:async data=>{shared=data;}}});
   await nodes['#share-survey'].onclick();
-  assert.equal(copied, url);
-  assert.equal(nodes['#share-status'].textContent, 'linkCopied');
+  assert.deepEqual(shared,{url});
+  assert.equal(nodes['#share-platforms'].hidden,true);
 });
 
-test('a blocked clipboard leaves a selectable survey link', async () => {
-  const nodes = {
-    '#share-survey': {}, '#copy-survey-link': {}, '#share-status': {},
-    '#survey-link-wrap': {hidden:true}, '#survey-link': {focus(){},select(){this.selected = true;}}
-  };
-  const url = 'https://example.test/survey/?lang=mn';
-  connectSurveyShare({querySelector: selector => nodes[selector]}, url, key => key, {});
-  await nodes['#copy-survey-link'].onclick();
-  assert.equal(nodes['#survey-link-wrap'].hidden, false);
-  assert.equal(nodes['#survey-link'].value, url);
-  assert.equal(nodes['#survey-link'].selected, true);
-  assert.equal(nodes['#share-status'].textContent, 'copyManually');
+test('unsupported or rejected native share opens platform actions without copying', async () => {
+  const url='https://example.test/survey/?lang=ko';
+  const clipboard={writeText(){assert.fail('Sharing must never copy');}};
+  for (const device of [
+    {clipboard},
+    {clipboard,share:async()=>{throw new DOMException('No targets','AbortError');}}
+  ]) {
+    const {nodes,section}=shareControls();
+    connectSurveyShare(section,url,key=>key,{device});
+    await nodes['#share-survey'].onclick();
+    assert.equal(nodes['#share-platforms'].hidden,false);
+    assert.equal(nodes['#share-survey']['aria-expanded'],'true');
+    assert.equal(nodes['#share-kakao'].hidden,true);
+    const telegram=new URL(nodes['#share-telegram'].href);
+    assert.equal(telegram.origin+telegram.pathname,'https://t.me/share/url');
+    assert.equal(telegram.searchParams.get('url'),url);
+    const facebook=new URL(nodes['#share-facebook'].href);
+    assert.equal(facebook.origin+facebook.pathname,'https://www.facebook.com/sharer/sharer.php');
+    assert.equal(facebook.searchParams.get('u'),url);
+  }
 });
 
-test('an in-app browser that rejects sharing reveals the URL and still offers KakaoTalk copying', async () => {
-  const nodes = {
-    '#share-survey': {}, '#copy-survey-link': {}, '#share-status': {},
-    '#survey-link-wrap': {hidden:true}, '#survey-link': {focus(){},select(){this.selected=true;}}
+test('configured Kakao SDK passes the public URL to the KakaoTalk recipient picker', async () => {
+  const url='https://example.test/survey/?lang=mn';
+  let script, key, request;
+  const browser={
+    document:{createElement:()=>({}),head:{append(element){script=element;}}},
+    Kakao:{
+      isInitialized:()=>Boolean(key),
+      init(value){key=value;},
+      Share:{sendScrap(payload){request=payload;}}
+    }
   };
-  const url = 'https://example.test/survey/?lang=ko';
-  const section = {querySelector: selector => nodes[selector],ownerDocument:{execCommand:action=>action==='copy'}};
-  connectSurveyShare(section,url,key=>key,{
-    canShare:()=>false,
-    share:async ()=>{throw new DOMException('No targets','AbortError');},
-    clipboard:{writeText:async ()=>{throw new DOMException('Clipboard blocked','NotAllowedError');}}
-  });
+  assert.equal(await loadKakaoShare('',browser),null);
+  assert.equal(script,undefined);
+  const kakao=loadKakaoShare('browser-test-key',browser);
+  const {nodes,section}=shareControls();
+  connectSurveyShare(section,url,value=>value,{device:{},kakao});
+  assert.equal(nodes['#share-kakao'].hidden,true);
+  assert.equal(script.crossOrigin,'anonymous');
+  script.onload();
+  await kakao;
+  assert.equal(nodes['#share-kakao'].hidden,false);
   await nodes['#share-survey'].onclick();
-  assert.equal(nodes['#survey-link-wrap'].hidden,false);
-  assert.equal(nodes['#share-status'].textContent,'shareUseCopy');
-  await nodes['#copy-survey-link'].onclick();
-  assert.equal(nodes['#survey-link'].value,url);
-  assert.equal(nodes['#survey-link'].selected,true);
-  assert.equal(nodes['#share-status'].textContent,'linkCopied');
+  await nodes['#share-kakao'].onclick();
+  assert.equal(key,'browser-test-key');
+  assert.deepEqual(request,{requestUrl:url});
 });

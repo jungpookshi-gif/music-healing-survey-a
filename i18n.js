@@ -349,13 +349,6 @@ export const text = {
     "邀请朋友参加问卷",
     "Найзуудаа судалгаанд урих"
   ],
-  "shareHelp": [
-    "Chọn KakaoTalk trong menu chia sẻ, hoặc sao chép link rồi dán vào cuộc trò chuyện.",
-    "공유 메뉴에서 카카오톡을 선택하거나 링크를 복사해 대화창에 붙여 넣으세요.",
-    "Choose KakaoTalk in the share menu or copy the link and paste it into a chat.",
-    "在分享菜单中选择 KakaoTalk，或复制链接后粘贴到聊天中。",
-    "Хуваалцах цэснээс KakaoTalk-ыг сонгох эсвэл холбоосыг хуулж чатад буулгана уу."
-  ],
   "shareSurvey": [
     "Chia sẻ khảo sát",
     "설문 공유",
@@ -363,39 +356,25 @@ export const text = {
     "分享问卷",
     "Судалгааг хуваалцах"
   ],
-  "copyLink": [
-    "Sao chép link cho KakaoTalk",
-    "카카오톡에 보낼 링크 복사",
-    "Copy link for KakaoTalk",
-    "复制 KakaoTalk 分享链接",
-    "KakaoTalk-д илгээх холбоос хуулах"
+  "chooseShareApp": [
+    "Chọn nơi bạn muốn chia sẻ.",
+    "공유할 앱을 선택하세요.",
+    "Choose where to share.",
+    "请选择分享平台。",
+    "Хуваалцах аппаа сонгоно уу."
   ],
-  "surveyLink": [
-    "Liên kết khảo sát",
-    "설문 링크",
-    "Survey link",
-    "问卷链接",
-    "Судалгааны холбоос"
+  "otherShareApps": [
+    "Ứng dụng khác",
+    "다른 앱",
+    "Other apps",
+    "其他应用",
+    "Бусад апп"
   ],
-  "linkCopied": [
-    "Đã sao chép. Bạn có thể dán liên kết vào cuộc trò chuyện.",
-    "링크를 복사했습니다. 대화창에 붙여 넣을 수 있습니다.",
-    "Link copied. You can paste it into a chat.",
-    "链接已复制，可以粘贴到聊天中。",
-    "Холбоосыг хууллаа. Чатад буулгаж болно."
-  ],
-  "copyManually": [
-    "Hãy sao chép đường dẫn đã chọn và dán vào cuộc trò chuyện.",
-    "선택된 링크를 복사해 대화창에 붙여 넣으세요.",
-    "Copy the selected link and paste it into a chat.",
-    "请复制已选中的链接并粘贴到聊天中。",
-    "Сонгогдсон холбоосыг хуулж чатад буулгана уу."
-  ],
-  "shareUseCopy": [
-    "Bạn có thể dùng nút sao chép link để gửi qua KakaoTalk.",
-    "링크 복사 버튼으로 카카오톡에 보낼 수 있습니다.",
-    "Use the copy button to send the link in KakaoTalk.",
-    "可以使用复制按钮将链接发到 KakaoTalk。",
-    "Холбоос хуулах товчийг ашиглан KakaoTalk-аар илгээж болно."
+  "shareKakaoUnavailable": [
+    "Không mở được KakaoTalk. Vui lòng chọn ứng dụng khác.",
+    "카카오톡을 열 수 없습니다. 다른 앱을 선택해 주세요.",
+    "KakaoTalk could not open. Choose another app.",
+    "无法打开 KakaoTalk，请选择其他应用。",
+    "KakaoTalk-ыг нээж чадсангүй. Өөр апп сонгоно уу."
   ]
 };
