@@ -37,9 +37,6 @@ export function connectSurveyShare(section, url, t, {device = navigator, kakao =
   const status = section.querySelector('#share-status');
   const supportsNative = typeof device.share === 'function';
 
-  const telegram = new URL('https://t.me/share/url');
-  telegram.searchParams.set('url', url);
-  section.querySelector('#share-telegram').href = telegram.href;
   const facebook = new URL('https://www.facebook.com/sharer/sharer.php');
   facebook.searchParams.set('u', url);
   section.querySelector('#share-facebook').href = facebook.href;
@@ -61,21 +58,25 @@ export function connectSurveyShare(section, url, t, {device = navigator, kakao =
   }
 
   let kakaoShare = null;
-  if (kakao) {
-    void kakao.then(send => {
-      if (!send) return;
-      kakaoShare = send;
-      kakaoButton.hidden = false;
-      kakaoButton.onclick = async () => {
-        status.textContent = '';
-        try {
-          await send(url);
-        } catch {
-          status.textContent = t('shareKakaoUnavailable');
-        }
-      };
-    });
-  }
+  if (kakao) void kakao.then(send => { kakaoShare = send; });
+
+  kakaoButton.onclick = async () => {
+    status.textContent = '';
+    try {
+      if (kakaoShare) {
+        await kakaoShare(url);
+        return;
+      }
+      if (supportsNative) {
+        status.textContent = t('shareKakaoChoose');
+        await device.share({url});
+        return;
+      }
+    } catch {
+      // A browser can block the share picker even when it exposes share().
+    }
+    status.textContent = t('shareKakaoUnavailable');
+  };
 
   system.onclick = shareWithDevice;
   share.onclick = () => {

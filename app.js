@@ -1,8 +1,8 @@
 import {fields, options} from './schema.js?v=3';
-import {text} from './i18n.js?v=7';
+import {text} from './i18n.js?v=8';
 import {validAnswer, makePayload, noStressListening, detailLimits, ageRange} from './logic.js?v=4';
 import {createPlayer} from './music.js?v=3';
-import {connectSurveyShare, loadKakaoShare, surveyInviteUrl} from './sharing.js?v=7';
+import {connectSurveyShare, loadKakaoShare, surveyInviteUrl} from './sharing.js?v=8';
 
 const languages = ['vi', 'ko', 'en', 'zh', 'mn'];
 const draftKey = 'mhs-a-v2';
@@ -345,9 +345,8 @@ function shareSection() {
     <div class="share-platforms" id="share-platforms" hidden>
       <p>${t('chooseShareApp')}</p>
       <div class="share-actions">
-        <button class="secondary" type="button" id="share-kakao" hidden>KakaoTalk</button>
         <a class="secondary" id="share-facebook" rel="noreferrer">Facebook</a>
-        <a class="secondary" id="share-telegram" rel="noreferrer">Telegram</a>
+        <button class="secondary" type="button" id="share-kakao">KakaoTalk</button>
         <button class="secondary" type="button" id="share-other-apps" hidden>${t('otherShareApps')}</button>
       </div>
       <p id="share-status" role="status"></p>

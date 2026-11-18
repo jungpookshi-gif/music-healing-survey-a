@@ -371,10 +371,17 @@ export const text = {
     "Бусад апп"
   ],
   "shareKakaoUnavailable": [
-    "Không mở được KakaoTalk. Vui lòng chọn ứng dụng khác.",
-    "카카오톡을 열 수 없습니다. 다른 앱을 선택해 주세요.",
-    "KakaoTalk could not open. Choose another app.",
-    "无法打开 KakaoTalk，请选择其他应用。",
-    "KakaoTalk-ыг нээж чадсангүй. Өөр апп сонгоно уу."
+    "Không mở được KakaoTalk từ trình duyệt này. Hãy mở trang trong Chrome hoặc Safari rồi chọn KakaoTalk trong menu chia sẻ nếu có.",
+    "이 브라우저에서는 카카오톡 공유창을 열 수 없습니다. Chrome이나 Safari에서 이 페이지를 열고 공유 메뉴에 KakaoTalk이 표시되면 선택하세요.",
+    "This browser could not open KakaoTalk sharing. Open the page in Chrome or Safari and choose KakaoTalk in the share menu if available.",
+    "当前浏览器无法打开 KakaoTalk 分享。请在 Chrome 或 Safari 中打开此页，并在分享菜单中选择 KakaoTalk（如可用）。",
+    "Энэ хөтчөөс KakaoTalk-аар хуваалцах боломжгүй байна. Хуудсыг Chrome эсвэл Safari-д нээгээд хуваалцах цэсэнд KakaoTalk байвал сонгоно уу."
+  ],
+  "shareKakaoChoose": [
+    "Chọn KakaoTalk trong menu chia sẻ.",
+    "기기의 공유 메뉴에서 KakaoTalk을 선택하세요.",
+    "Choose KakaoTalk in your device’s share menu.",
+    "请在设备的分享菜单中选择 KakaoTalk。",
+    "Төхөөрөмжийн хуваалцах цэснээс KakaoTalk-ыг сонгоно уу."
   ]
 };

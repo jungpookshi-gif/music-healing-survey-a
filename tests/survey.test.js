@@ -19,7 +19,7 @@ function shareControls() {
   const nodes = {
     '#share-survey': {setAttribute(name,value){this[name]=value;}},
     '#share-platforms': {hidden:true}, '#share-other-apps': {hidden:true},
-    '#share-kakao': {hidden:true}, '#share-telegram': {}, '#share-facebook': {}, '#share-status': {}
+    '#share-kakao': {}, '#share-facebook': {}, '#share-status': {}
   };
   return {nodes, section:{querySelector:selector=>nodes[selector]}};
 }
@@ -46,14 +46,22 @@ test('unsupported or rejected native share opens platform actions without copyin
     await nodes['#share-survey'].onclick();
     assert.equal(nodes['#share-platforms'].hidden,false);
     assert.equal(nodes['#share-survey']['aria-expanded'],'true');
-    assert.equal(nodes['#share-kakao'].hidden,true);
-    const telegram=new URL(nodes['#share-telegram'].href);
-    assert.equal(telegram.origin+telegram.pathname,'https://t.me/share/url');
-    assert.equal(telegram.searchParams.get('url'),url);
+    await nodes['#share-kakao'].onclick();
+    assert.equal(nodes['#share-status'].textContent,'shareKakaoUnavailable');
     const facebook=new URL(nodes['#share-facebook'].href);
     assert.equal(facebook.origin+facebook.pathname,'https://www.facebook.com/sharer/sharer.php');
     assert.equal(facebook.searchParams.get('u'),url);
   }
+});
+
+test('KakaoTalk uses the device picker when the SDK is not configured', async () => {
+  const {nodes,section}=shareControls();
+  const url='https://example.test/survey/?lang=vi';
+  let shared;
+  connectSurveyShare(section,url,key=>key,{device:{share:data=>{shared=data;}}});
+  await nodes['#share-kakao'].onclick();
+  assert.deepEqual(shared,{url});
+  assert.equal(nodes['#share-status'].textContent,'shareKakaoChoose');
 });
 
 test('configured Kakao SDK passes the public URL to the KakaoTalk recipient picker', async () => {
@@ -72,11 +80,9 @@ test('configured Kakao SDK passes the public URL to the KakaoTalk recipient pick
   const kakao=loadKakaoShare('browser-test-key',browser);
   const {nodes,section}=shareControls();
   connectSurveyShare(section,url,value=>value,{device:{},kakao});
-  assert.equal(nodes['#share-kakao'].hidden,true);
   assert.equal(script.crossOrigin,'anonymous');
   script.onload();
   await kakao;
-  assert.equal(nodes['#share-kakao'].hidden,false);
   await nodes['#share-survey'].onclick();
   await nodes['#share-kakao'].onclick();
   assert.equal(key,'browser-test-key');
