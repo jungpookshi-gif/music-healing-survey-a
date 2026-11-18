@@ -31,11 +31,11 @@ export const fields = [
     "code": "A03",
     "key": "culture",
     "label": [
-      "Hiện bạn đang sinh sống ở quốc gia nào?",
-      "현재 거주하고 있는 국가는 어디입니까?",
-      "In which country do you currently live?",
-      "您目前居住在哪个国家？",
-      "Та одоо аль улсад амьдарч байна вэ?"
+      "Bạn thuộc nền văn hóa nào hoặc bạn đến từ quốc gia nào?",
+      "어느 문화권에 속해 있거나 어느 나라 출신입니까?",
+      "What is your cultural background or country of origin?",
+      "您的文化背景是什么，或您来自哪个国家？",
+      "Та ямар соёлын бүлэгт харьяалагддаг вэ, эсвэл аль улсаас гаралтай вэ?"
     ],
     "required": true,
     "type": "choice",

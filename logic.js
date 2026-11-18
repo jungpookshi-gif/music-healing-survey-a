@@ -1,4 +1,4 @@
-import {options} from './schema.js?v=3';
+import {options} from './schema.js?v=4';
 export const VERSION = 'music-healing-survey-a/v2';
 export const ageRange = {min: 18, max: 65};
 export const previousMaxAge = 120;
