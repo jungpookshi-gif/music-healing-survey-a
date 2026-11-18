@@ -1,5 +1,5 @@
 import {fields, options} from './schema.js?v=4';
-import {text} from './i18n.js?v=13';
+import {text} from './i18n.js?v=14';
 import {validAnswer, makePayload, noStressListening, detailLimits, ageRange} from './logic.js?v=5';
 import {createPlayer} from './music.js?v=3';
 import {connectSurveyShare, loadKakaoShare, surveyInviteUrl, surveyShareSection} from './sharing.js?v=14';
@@ -372,18 +372,19 @@ function renderDone() {
     </figure>
     <h1>${t('done')}</h1>
     <div class="notice">${t(receipt ? 'sent' : 'localdone')}</div>
-    <div class="actions"><button class="secondary" id="edit" ${receipt ? 'disabled' : ''}>${t('edit')}</button>
-      <button class="primary" id="download">${t('download')}</button></div>
-    ${receipt ? surveyShareSection(t) : ''}
+    ${receipt ? surveyShareSection(t) : `<div class="actions">
+      <button class="secondary" id="edit">${t('edit')}</button>
+      <button class="primary" id="download">${t('download')}</button></div>`}
   </div>`;
   const image = app.querySelector('.record-sleeve img');
   if (image) image.onerror = () => image.remove();
-  app.querySelector('#download').onclick = download;
-  app.querySelector('#edit').onclick = () => show(0);
   if (receipt) {
     connectSurveyShare(app.querySelector('.survey-share'), surveyInviteUrl(location.href, lang), t, {
       kakao: loadKakaoShare(config.kakaoJavaScriptKey)
     });
+  } else {
+    app.querySelector('#download').onclick = download;
+    app.querySelector('#edit').onclick = () => show(0);
   }
 }
 
