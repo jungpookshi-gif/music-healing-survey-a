@@ -1,4 +1,4 @@
-import {options} from './schema.js';
+import {options} from './schema.js?v=3';
 export const VERSION = 'music-healing-survey-a/v2';
 export function noStressListening(answers) {
   return ['never','no_stress'].includes(answers.stress_frequency);
@@ -16,6 +16,21 @@ export function validAnswer(field, answers) {
   if (field.key === 'stress_genre' && noStressListening(answers) !== (value === 'none')) return false;
   return options[field.options].some(option => option[0] === value);
 }
-export function makePayload(answers,language) {
-  return {schema:VERSION,id:crypto.randomUUID(),submittedAt:new Date().toISOString(),language,consent:true,answers:{...answers}};
+export const detailLimits = {participant_name: 100, feedback: 1000};
+
+export function makePayload(answers, language, input = {}) {
+  const details = {};
+  for (const [key, limit] of Object.entries(detailLimits)) {
+    const value = (input[key] ?? '').trim().slice(0, limit);
+    if (value) details[key] = value;
+  }
+  return {
+    schema: VERSION,
+    id: crypto.randomUUID(),
+    submittedAt: new Date().toISOString(),
+    language,
+    consent: true,
+    answers: {...answers},
+    details
+  };
 }

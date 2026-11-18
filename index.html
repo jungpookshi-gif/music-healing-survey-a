@@ -1,6 +1,38 @@
 <!doctype html>
-<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#eeeafa"><meta name="description" content="Music Healing Survey A — a standalone 10-question multilingual survey about music and perceived stress."><title>Music Healing · Survey A</title><link rel="stylesheet" href="style.css"></head><body>
-<header><a class="brand" href="./">MUSIC HEALING <span>SURVEY A</span></a><nav aria-label="Language"><button data-lang="vi">VI</button><button data-lang="ko">한국어</button><button data-lang="en">EN</button><button data-lang="zh">中文</button></nav></header>
-<main><section class="art" aria-hidden="true"><div class="orbit"></div><div class="vinyl"><div class="label">MUSIC<br>HEALING<span> A / 01</span></div></div><div class="arm"></div><div class="artnote">YOUR RHYTHM, YOUR STORY.</div></section><button id="motion" class="quiet"></button><section id="app" aria-live="polite"></section></main>
-<footer>Music Healing · Survey A <span>10 questions · VI / KO / EN / ZH</span><a id="research-link" href="./admin/">Quản trị</a></footer>
-<script src="config.js?v=2-online"></script><script type="module" src="app.js"></script></body></html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#eeeafa">
+  <meta name="description" content="Music Healing Survey A — a standalone 10-question multilingual survey about music and perceived stress.">
+  <title>Music Healing · Survey A</title>
+  <link rel="stylesheet" href="style.css?v=3">
+</head>
+<body>
+  <header>
+    <a class="brand" href="./">MUSIC HEALING <span>SURVEY A</span></a>
+    <nav aria-label="Language">
+      <button data-lang="vi" lang="vi">VI</button><button data-lang="ko" lang="ko">한국어</button>
+      <button data-lang="en" lang="en">EN</button><button data-lang="zh" lang="zh-Hans">中文</button>
+      <button data-lang="mn" lang="mn">Монгол</button>
+    </nav>
+  </header>
+  <main>
+    <section class="art" aria-hidden="true">
+      <div class="orbit"></div><div class="vinyl"><div class="label">MUSIC<br>HEALING<span> A / 01</span></div></div>
+      <div class="arm"></div><div class="artnote">YOUR RHYTHM, YOUR STORY.</div>
+    </section>
+    <button id="motion" class="quiet"></button>
+    <section id="music-player" hidden>
+      <audio src="media/slow-morning.mp3" preload="none" loop></audio>
+      <button id="music-toggle" type="button" class="secondary" aria-controls="music-status"></button>
+      <div class="volume-control"><label for="music-volume"></label><input id="music-volume" type="range" min="0" max="100" value="25"></div>
+      <span id="music-status" role="status"></span>
+    </section>
+    <section id="app"></section>
+  </main>
+  <footer>Music Healing · Survey A <span id="question-count">10 câu hỏi</span><a id="research-link" href="./admin/">Quản trị</a></footer>
+  <script src="config.js?v=3"></script>
+  <script type="module" src="app.js?v=3"></script>
+</body>
+</html>

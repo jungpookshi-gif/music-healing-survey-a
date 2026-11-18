@@ -1,53 +1,367 @@
-import {fields,options} from './schema.js';
-import {text} from './i18n.js';
-import {validAnswer,makePayload,noStressListening} from './logic.js';
-const langs=['vi','ko','en','zh'];
-let lang=new URL(location.href).searchParams.get('lang')||'vi';if(!langs.includes(lang))lang='vi';
-let step=-1,answers={},consent=false,receipt=false,result=null,paused=false;
-const config=window.SURVEY_CONFIG||{};
-const endpoint=typeof config.endpoint==='string'&&/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(config.endpoint)?config.endpoint:'';
-const app=document.querySelector('#app');
-try{const saved=JSON.parse(sessionStorage.getItem('mhs-a-v2')||'null');if(saved&&saved.consent){answers=saved.answers||{};consent=true;}}catch{}
-const t=k=>text[k][langs.indexOf(lang)];
-const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function remember(){try{sessionStorage.setItem('mhs-a-v2',JSON.stringify({consent,answers}));}catch{}}
-function setAnswer(key,value) {
-  const oldGenre = answers.stress_genre;
+import {fields, options} from './schema.js?v=3';
+import {text} from './i18n.js?v=3';
+import {validAnswer, makePayload, noStressListening, detailLimits} from './logic.js?v=3';
+import {createPlayer} from './music.js?v=3';
+
+const languages = ['vi', 'ko', 'en', 'zh', 'mn'];
+const draftKey = 'mhs-a-v2';
+const finalStep = fields.length;
+const doneStep = finalStep + 1;
+const config = window.SURVEY_CONFIG || {};
+const endpoint = /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(config.endpoint ?? '') ? config.endpoint : '';
+const coverImage = typeof config.coverImage === 'string' ? config.coverImage : '';
+const app = document.querySelector('#app');
+const art = document.querySelector('.art');
+const motion = document.querySelector('#motion');
+const player = createPlayer(document.querySelector('#music-player'), key => t(key));
+
+let lang = new URL(location.href).searchParams.get('lang');
+if (!languages.includes(lang)) lang = 'vi';
+let step = -1;
+let answers = {};
+let details = {};
+let consent = false;
+let receipt = false;
+let result = null;
+let paused = false;
+let submitting = false;
+let failed = false;
+let nextTimer;
+
+try {
+  const draft = JSON.parse(sessionStorage.getItem(draftKey));
+  if (draft?.consent) {
+    answers = draft.answers ?? {};
+    details = draft.details ?? {};
+    result = draft.pending ?? null;
+    consent = true;
+  }
+} catch {}
+
+const li = () => languages.indexOf(lang);
+const t = key => text[key][li()];
+const esc = value => String(value).replace(/[&<>"']/g, ch => ({
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+}[ch]));
+
+function remember() {
+  try {
+    const pending = endpoint && step !== doneStep ? result : null;
+    sessionStorage.setItem(draftKey, JSON.stringify({consent, answers, details, pending}));
+  } catch {}
+}
+
+function clearDraft() {
+  try { sessionStorage.removeItem(draftKey); } catch {}
+}
+
+function setAnswer(key, value) {
+  const previousGenre = answers.stress_genre;
   answers[key] = value;
   if (key === 'stress_frequency') {
     if (noStressListening(answers)) answers.stress_genre = 'none';
-    else if (oldGenre === 'none') delete answers.stress_genre;
+    else if (previousGenre === 'none') delete answers.stress_genre;
   }
-  if (answers.stress_genre !== oldGenre || answers.stress_genre === 'none') delete answers.genre_like;
+  if (answers.stress_genre !== previousGenre || answers.stress_genre === 'none') delete answers.genre_like;
   remember();
 }
-function render(){
- const researchLink = document.querySelector('#research-link');
- researchLink.textContent = ['Quản trị','연구 관리자','Research admin','研究管理'][langs.indexOf(lang)];
- researchLink.href = './admin/?lang='+lang;
- document.documentElement.lang=lang;document.title=t('title')+' · Survey A';
- document.querySelectorAll('[data-lang]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.lang===lang)));
- document.querySelector('#motion').textContent=t(paused?'resume':'motion');
- document.querySelector('.arm').style.transform=`rotate(${-19+Math.max(0,step)*2}deg)`;
- if(step===-1){app.innerHTML=`<div class="card"><div class="eyebrow">${t('tag')}</div><h1>${t('studyTitle')}</h1><p>${t('desc')}</p><p class="help">${t('privacy')}</p><div class="notice">${t(endpoint?'online':'offline')}</div><label class="consent"><input id="consent" type="checkbox" ${consent?'checked':''}><span>${t('consent')}</span></label><button id="start" class="primary" ${consent?'':'disabled'}>${t('start')} →</button></div>`;document.querySelector('#consent').onchange=e=>{consent=e.target.checked;if(!consent){try{sessionStorage.removeItem('mhs-a-v2')}catch{}}else remember();document.querySelector('#start').disabled=!consent;};document.querySelector('#start').onclick=()=>{step=0;render();};return;}
- if(step===10){renderDone();return;}
- const f=fields[step],v=answers[f.key],special=f.key==='genre_like'&&answers.stress_genre==='none',required=f.required&&!special;
- app.innerHTML=`<div class="card"><div class="meta"><span>${f.code} · ${t('track')} ${step+1} / 10</span><span class="badge">${t(required?'required':'optional')}</span></div><h2 id="question">${esc(f.label[langs.indexOf(lang)])}</h2><div id="control"></div><p id="error" role="alert"></p><div class="actions"><button id="back" class="secondary">← ${t('back')}</button><button id="next" class="primary">${step===9?t(endpoint?'submit':'finish'):t('next')} →</button></div></div>`;
- const c=document.querySelector('#control');
- if (noStressListening(answers) && ['stress_genre','genre_like'].includes(f.key)) {
-   c.textContent = t('inapp');
-   app.querySelector('.badge').hidden = true;
- } else if(f.type==='choice'){c.innerHTML=`<div class="choices" role="radiogroup" aria-labelledby="question">${options[f.options].filter(o=>f.key!=='stress_genre'||o[0]!=='none').map(o=>`<label class="choice"><input type="radio" name="answer" value="${o[0]}" ${v===o[0]?'checked':''}><span>${esc(o[langs.indexOf(lang)+1])}</span></label>`).join('')}</div>`;c.querySelectorAll('input').forEach(i=>i.onchange=()=>setAnswer(f.key,i.value));}
- else if(f.type==='number'){c.innerHTML=`<input id="answer" aria-labelledby="question" type="number" inputmode="numeric" min="${f.key==='age'?18:0}" max="${f.key==='age'?120:1440}" step="1" value="${v??''}"><p class="help">${t(f.key==='age'?'ageHint':'listenHint')}</p>`;c.querySelector('input').oninput=e=>setAnswer(f.key,e.target.value===''?null:Number(e.target.value));}
- else{c.innerHTML=`<div class="scale-value"><output id="rating">${Number.isInteger(v)?v:'—'}</output><small> / 10</small></div><input id="range" type="range" min="0" max="10" step="1" value="${Number.isInteger(v)?v:5}" aria-labelledby="question" aria-valuetext="${Number.isInteger(v)?v:t('unanswered')}"><div class="ticks">${Array.from({length:11},(_,i)=>`<span>${i}</span>`).join('')}</div><div class="endpoints"><span>${t(f.key==='genre_like'?'lowlike':'lowstress')}</span><span>${t(f.key==='genre_like'?'highlike':'highstress')}</span></div><input id="numeric" type="number" min="0" max="10" step="1" aria-labelledby="question" value="${v??''}"><p class="help">${t('scalehelp')}</p>${special?`<p class="help">${t('notapp')}</p>`:''}`;
- const range=c.querySelector('#range'),num=c.querySelector('#numeric');function rating(n){setAnswer(f.key,n);c.querySelector('#rating').textContent=n??'—';range.setAttribute('aria-valuetext',n===null?t('unanswered'):String(n));}range.onpointerup=()=>{num.value=range.value;rating(Number(range.value));};range.oninput=()=>{num.value=range.value;rating(Number(range.value));};num.oninput=()=>{const n=num.value===''?null:Number(num.value);rating(n);if(n!==null&&n>=0&&n<=10)range.value=n;};}
- if(!required && !special){const skip=document.createElement('button');skip.className='quiet';skip.textContent=t('skip');skip.onclick=()=>{delete answers[f.key];remember();advance();};c.append(skip);}
- document.querySelector('#back').onclick=()=>{step--;render();};document.querySelector('#next').onclick=()=>{if(!validAnswer(f,answers)){document.querySelector('#error').textContent=t(f.type==='number'?'number':'choose');return;}advance();};
+
+function show(nextStep) {
+  clearTimeout(nextTimer);
+  step = nextStep;
+  render();
+  const heading = app.querySelector('h1, h2');
+  heading.tabIndex = -1;
+  heading.focus({preventScroll: true});
+  if (heading.getBoundingClientRect().bottom > window.innerHeight) {
+    heading.scrollIntoView({block: 'nearest'});
+  }
 }
-async function advance(){if(step<9){step++;render();return;}if(!fields.every(f=>validAnswer(f,answers))){step=fields.findIndex(f=>!validAnswer(f,answers));render();return;}
- if(!result)result=makePayload(answers,lang);else result={...result,language:lang,answers:{...answers}};
- if(endpoint){const button=document.querySelector('#next');button.disabled=true;try{const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);let res;try{res=await fetch(endpoint,{method:'POST',body:new URLSearchParams({payload:JSON.stringify(result)}),signal:controller.signal,redirect:'follow'});}finally{clearTimeout(timer);}const body=await res.json();if(!res.ok||body.ok!==true||body.id!==result.id)throw new Error('Unconfirmed');receipt=true;}catch{document.querySelector('#error').textContent=t('failed');button.disabled=false;let dl=document.querySelector('#backup');if(!dl){dl=document.createElement('button');dl.id='backup';dl.className='quiet';dl.textContent=t('download');dl.onclick=download;app.querySelector('.card').append(dl);}return;}}
- step=10;try{sessionStorage.removeItem('mhs-a-v2');}catch{}render();}
-function download(){const blob=new Blob([JSON.stringify(result,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='survey-a-'+result.id+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
-function renderDone(){app.innerHTML=`<div class="card"><div class="successmark">◎</div><div class="eyebrow">SURVEY A · COMPLETE</div><h1>${t('done')}</h1><div class="notice">${t(receipt?'sent':'localdone')}</div><div class="actions"><button class="secondary" id="edit">${t('edit')}</button><button class="primary" id="download">${t('download')}</button></div></div>`;document.querySelector('#download').onclick=download;document.querySelector('#edit').onclick=()=>{step=0;render();};if(receipt)document.querySelector('#edit').disabled=true;}
- document.querySelectorAll('[data-lang]').forEach(b=>b.onclick=()=>{lang=b.dataset.lang;const url=new URL(location.href);url.searchParams.set('lang',lang);history.replaceState(null,'',url);render();});document.querySelector('#motion').onclick=()=>{paused=!paused;document.body.classList.toggle('paused',paused);document.querySelector('#motion').textContent=t(paused?'resume':'motion');};render();
+
+function queueAdvance() {
+  clearTimeout(nextTimer);
+  const current = step;
+  nextTimer = setTimeout(() => {
+    if (step === current) nextQuestion();
+  }, 220);
+}
+
+function render() {
+  document.documentElement.lang = lang === 'zh' ? 'zh-Hans' : lang;
+  document.title = t('title') + ' · Survey A';
+  document.querySelectorAll('[data-lang]').forEach(button => {
+    button.setAttribute('aria-pressed', String(button.dataset.lang === lang));
+  });
+  const research = document.querySelector('#research-link');
+  research.textContent = t('research');
+  research.href = './admin/?lang=' + (lang === 'mn' ? 'en' : lang);
+  document.querySelector('#question-count').textContent = t('footer');
+  motion.textContent = t(paused ? 'resume' : 'motion');
+  art.hidden = motion.hidden = step === doneStep;
+  art.querySelector('.arm').style.transform = `rotate(${-19 + Math.min(finalStep, Math.max(0, step)) * 2}deg)`;
+  player.update(step >= 0 && step <= finalStep);
+
+  if (step === -1) return renderIntro();
+  if (step === finalStep) return renderDetails();
+  if (step === doneStep) return renderDone();
+  renderQuestion();
+}
+
+function renderIntro() {
+  app.innerHTML = `<div class="card">
+    <div class="eyebrow">${t('tag')}</div>
+    <h1>${t('studyTitle')}</h1>
+    <p>${t('desc')}</p>
+    <p class="help">${t('privacy')}</p>
+    <div class="notice">${t(endpoint ? 'online' : 'offline')}</div>
+    <label class="consent"><input id="consent" type="checkbox" ${consent ? 'checked' : ''}><span>${t('consent')}</span></label>
+    <button id="start" class="primary" ${consent ? '' : 'disabled'}>${t('start')} →</button>
+  </div>`;
+  const start = app.querySelector('#start');
+  app.querySelector('#consent').onchange = event => {
+    consent = event.target.checked;
+    if (consent) remember();
+    else clearDraft();
+    start.disabled = !consent;
+  };
+  start.onclick = () => {
+    show(result && endpoint ? finalStep : 0);
+    void player.play();
+  };
+}
+
+function renderQuestion() {
+  const field = fields[step];
+  const value = answers[field.key];
+  const excluded = noStressListening(answers) && ['stress_genre', 'genre_like'].includes(field.key);
+  app.innerHTML = `<div class="card">
+    <div class="meta"><span>${field.code} · ${t('track')} ${step + 1} / ${finalStep}</span>
+      ${excluded ? '' : `<span class="badge">${t(field.required ? 'required' : 'optional')}</span>`}</div>
+    <h2 id="question">${esc(field.label[li()])}</h2>
+    <div id="control"></div>
+    <p id="error" role="alert"></p>
+    <div class="actions"><button id="back" class="secondary">← ${t('back')}</button>
+      <button id="next" class="primary">${t('next')} →</button></div>
+  </div>`;
+  const control = app.querySelector('#control');
+  if (excluded) {
+    control.textContent = t('inapp');
+  } else if (field.type === 'choice') {
+    renderChoices(control, field, value);
+  } else if (field.type === 'number') {
+    const age = field.key === 'age';
+    control.innerHTML = `<input id="answer" aria-labelledby="question" type="number" inputmode="numeric"
+      min="${age ? 18 : 0}" max="${age ? 120 : 1440}" step="1" value="${esc(value ?? '')}">
+      <p class="help">${t(age ? 'ageHint' : 'listenHint')}</p>`;
+    const input = control.querySelector('input');
+    input.oninput = () => setAnswer(field.key, input.value === '' ? null : Number(input.value));
+    input.onkeydown = confirmOnEnter;
+  } else {
+    renderScale(control, field, value);
+  }
+  if (!field.required && !excluded) {
+    const skip = document.createElement('button');
+    skip.className = 'quiet';
+    skip.textContent = t('skip');
+    skip.onclick = () => {
+      delete answers[field.key];
+      remember();
+      nextQuestion();
+    };
+    control.append(skip);
+  }
+  app.querySelector('#back').onclick = () => show(step - 1);
+  app.querySelector('#next').onclick = nextQuestion;
+}
+
+function renderChoices(control, field, value) {
+  const group = options[field.options].filter(option => field.key !== 'stress_genre' || option[0] !== 'none');
+  control.innerHTML = `<div class="choices" role="radiogroup" aria-labelledby="question">
+    ${group.map(option => `<label class="choice"><input type="radio" name="answer" value="${option[0]}"
+      ${value === option[0] ? 'checked' : ''}><span>${esc(option[li() + 1])}</span></label>`).join('')}
+  </div>`;
+  for (const input of control.querySelectorAll('input')) {
+    input.onchange = () => setAnswer(field.key, input.value);
+    input.onclick = event => {
+      if (event.detail > 0) queueAdvance();
+    };
+    input.onkeydown = event => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      input.checked = true;
+      setAnswer(field.key, input.value);
+      queueAdvance();
+    };
+  }
+}
+
+function renderScale(control, field, value) {
+  const selected = Number.isInteger(value);
+  const like = field.key === 'genre_like';
+  control.innerHTML = `<div class="scale-value"><output id="rating">${selected ? value : '—'}</output><small> / 10</small></div>
+    <input id="range" type="range" min="0" max="10" step="1" value="${selected ? value : 5}"
+      aria-labelledby="question" aria-valuetext="${esc(selected ? value : t('unanswered'))}">
+    <div class="ticks">${Array.from({length: 11}, (_, i) => `<span>${i}</span>`).join('')}</div>
+    <div class="endpoints"><span>${t(like ? 'lowlike' : 'lowstress')}</span><span>${t(like ? 'highlike' : 'highstress')}</span></div>
+    <input id="numeric" type="number" min="0" max="10" step="1" inputmode="numeric" aria-labelledby="question" value="${esc(value ?? '')}">
+    <p class="help">${t('scalehelp')}</p>`;
+  const range = control.querySelector('#range');
+  const numeric = control.querySelector('#numeric');
+  const rating = control.querySelector('#rating');
+  function select(n) {
+    setAnswer(field.key, n);
+    rating.textContent = n ?? '—';
+    range.setAttribute('aria-valuetext', n === null ? t('unanswered') : String(n));
+  }
+  range.oninput = () => {
+    numeric.value = range.value;
+    select(Number(range.value));
+  };
+  range.onpointerup = () => {
+    range.oninput();
+    queueAdvance();
+  };
+  range.onkeydown = numeric.onkeydown = confirmOnEnter;
+  numeric.oninput = () => {
+    const score = numeric.value === '' ? null : Number(numeric.value);
+    select(score);
+    if (score !== null && score >= 0 && score <= 10) range.value = score;
+  };
+}
+
+function confirmOnEnter(event) {
+  if (event.key === 'Enter' && !event.isComposing) nextQuestion();
+}
+
+function nextQuestion() {
+  const field = fields[step];
+  if (!validAnswer(field, answers)) {
+    app.querySelector('#error').textContent = t(field.type === 'number' ? 'number' : 'choose');
+    return;
+  }
+  show(step + 1);
+}
+
+function renderDetails() {
+  const locked = Boolean(endpoint && result);
+  app.innerHTML = `<form class="card" id="details">
+    <h2>${t('finalStep')}</h2>
+    <p class="help" id="details-hint">${t('detailsHint')}</p>
+    <div class="details-field">
+      <label for="participant-name">${t('name')} <span class="badge">${t('optional')}</span></label>
+      <input id="participant-name" name="participant_name" type="text" maxlength="${detailLimits.participant_name}"
+        aria-describedby="details-hint" value="${esc(details.participant_name ?? '')}" ${locked ? 'readonly' : ''}>
+    </div>
+    <div class="details-field">
+      <label for="survey-feedback">${t('feedback')} <span class="badge">${t('optional')}</span></label>
+      <textarea id="survey-feedback" name="feedback" maxlength="${detailLimits.feedback}" rows="4"
+        aria-describedby="details-hint" ${locked ? 'readonly' : ''}>${esc(details.feedback ?? '')}</textarea>
+    </div>
+    <p id="error" role="alert">${failed ? t('failed') : ''}</p>
+    <div class="actions">
+      <button id="back" type="button" class="secondary" ${locked ? 'disabled' : ''}>← ${t('back')}</button>
+      <button id="next" type="submit" class="primary" ${submitting ? 'disabled' : ''}>
+        ${t(submitting ? 'sending' : endpoint ? 'submit' : 'finish')}</button>
+    </div>
+    ${failed ? `<button id="backup" type="button" class="quiet">${t('download')}</button>` : ''}
+  </form>`;
+  const form = app.querySelector('#details');
+  form.oninput = event => {
+    details[event.target.name] = event.target.value;
+    remember();
+  };
+  form.onsubmit = event => {
+    event.preventDefault();
+    void submit();
+  };
+  app.querySelector('#back').onclick = () => show(finalStep - 1);
+  if (failed) app.querySelector('#backup').onclick = download;
+}
+
+async function submit() {
+  if (submitting) return;
+  const missing = fields.findIndex(field => !validAnswer(field, answers));
+  if (missing !== -1) {
+    show(missing);
+    return;
+  }
+  if (!result || !endpoint) result = makePayload(answers, lang, details);
+  if (endpoint) {
+    submitting = true;
+    failed = false;
+    remember();
+    renderDetails();
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 20000);
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        body: new URLSearchParams({payload: JSON.stringify(result)}),
+        signal: controller.signal,
+        redirect: 'follow'
+      });
+      const body = await response.json();
+      if (!response.ok || body.ok !== true || body.id !== result.id ||
+        (Object.keys(result.details ?? {}).length && body.detailsSaved !== true)) throw Error('Unconfirmed');
+      receipt = true;
+    } catch {
+      failed = true;
+    } finally {
+      clearTimeout(timer);
+      submitting = false;
+    }
+    if (failed) {
+      renderDetails();
+      return;
+    }
+  }
+  clearDraft();
+  show(doneStep);
+}
+
+function download() {
+  const blob = new Blob([JSON.stringify(result, null, 2)], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'survey-a-' + result.id + '.json';
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function renderDone() {
+  app.innerHTML = `<div class="card completion">
+    <figure class="record-cover">
+      <div class="record-sleeve" aria-hidden="true">
+        <div class="record-art"><span>Music<br>Healing</span><small>Survey A</small></div>
+        ${coverImage ? `<img src="${esc(coverImage)}" alt="">` : ''}
+      </div>
+      <figcaption>${t('cover')}</figcaption>
+    </figure>
+    <h1>${t('done')}</h1>
+    <div class="notice">${t(receipt ? 'sent' : 'localdone')}</div>
+    <div class="actions"><button class="secondary" id="edit" ${receipt ? 'disabled' : ''}>${t('edit')}</button>
+      <button class="primary" id="download">${t('download')}</button></div>
+  </div>`;
+  const image = app.querySelector('.record-sleeve img');
+  if (image) image.onerror = () => image.remove();
+  app.querySelector('#download').onclick = download;
+  app.querySelector('#edit').onclick = () => show(0);
+}
+
+for (const button of document.querySelectorAll('[data-lang]')) {
+  button.onclick = () => {
+    clearTimeout(nextTimer);
+    lang = button.dataset.lang;
+    const url = new URL(location.href);
+    url.searchParams.set('lang', lang);
+    history.replaceState(null, '', url);
+    render();
+  };
+}
+motion.onclick = () => {
+  paused = !paused;
+  document.body.classList.toggle('paused', paused);
+  motion.textContent = t(paused ? 'resume' : 'motion');
+};
+render();

@@ -5,6 +5,8 @@ const SHEET_ID = 'YOUR_SURVEY_A_SPREADSHEET_ID';
 const VERSION = 'music-healing-survey-a/v2';
 const KEYS = ['age','gender','culture','status','listen_min','stress_frequency','stress_genre','purpose','genre_like','stress_week'];
 const HEADERS = ['id','received_at','submitted_at','language','schema','consent'].concat(KEYS);
+const DETAIL_LIMITS = {participant_name:100, feedback:1000};
+const DETAIL_KEYS = Object.keys(DETAIL_LIMITS);
 const CHOICES = {
   gender: ['female','male','nonbinary','other','na'],
   culture: ['vn','kr','cn','mn','mm','np','other','na'],
@@ -20,8 +22,12 @@ function workbook_() { return SpreadsheetApp.openById(SHEET_ID); }
 function setup() {
   const book = workbook_();
   const responseTab = book.getSheetByName('Responses');
-  if (!responseTab || String(responseTab.getRange(1,1,1,16).getValues()[0]) !== String(HEADERS))
+  if (!responseTab || String(responseTab.getRange(1,1,1,HEADERS.length).getValues()[0]) !== String(HEADERS))
     throw new Error('Expected the Survey A response headers.');
+  const lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try { ensureDetailColumns_(responseTab); }
+  finally { lock.releaseLock(); }
   const properties = PropertiesService.getScriptProperties();
   if (!properties.getProperty('ADMIN_KEY')) {
     const key = Utilities.getUuid() + Utilities.getUuid();
@@ -34,10 +40,10 @@ function setup() {
 function json_(value) {
   return ContentService.createTextOutput(JSON.stringify(value)).setMimeType(ContentService.MimeType.JSON);
 }
-function doGet() { return json_({service:VERSION}); }
+function doGet() { return json_({service:VERSION, detailsSupported:true}); }
 function validate_(data) {
   if (!data || data.schema !== VERSION || data.consent !== true ||
-      !['vi','ko','en','zh'].includes(data.language) ||
+      !['vi','ko','en','zh','mn'].includes(data.language) ||
       !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(data.id) ||
       typeof data.submittedAt !== 'string' || !Number.isFinite(Date.parse(data.submittedAt))) throw Error('invalid');
   const a = data.answers;
@@ -54,6 +60,30 @@ function validate_(data) {
   }
   if (['never','no_stress'].includes(a.stress_frequency) !== (a.stress_genre === 'none') ||
       (a.stress_genre === 'none' && a.genre_like != null)) throw Error('inapplicable');
+  const details = data.details;
+  if (details === undefined) return;
+  if (!details || typeof details !== 'object' || Array.isArray(details) ||
+      Object.keys(details).some(k => !DETAIL_KEYS.includes(k) ||
+        typeof details[k] !== 'string' || details[k].length > DETAIL_LIMITS[k])) throw Error('details');
+}
+
+function ensureDetailColumns_(tab) {
+  const first = HEADERS.length + 1;
+  const needed = HEADERS.length + DETAIL_KEYS.length - tab.getMaxColumns();
+  if (needed > 0) tab.insertColumnsAfter(tab.getMaxColumns(), needed);
+  const range = tab.getRange(1, first, 1, DETAIL_KEYS.length);
+  const current = range.getValues()[0];
+  if (DETAIL_KEYS.every((key, index) => current[index] === key)) return;
+  if (current.some((key, index) => key !== '' && key !== DETAIL_KEYS[index]))
+    throw Error('Unexpected Survey A detail headers.');
+  tab.getRange(2, first, tab.getMaxRows() - 1, DETAIL_KEYS.length).setNumberFormat('@');
+  range.setValues([DETAIL_KEYS]);
+}
+
+function detailText_(value) {
+  const text = value ? value.trim() : '';
+  // Keep entries that look like formulas as text in Sheets.
+  return /^[=+\-@']/.test(text) ? "'" + text : text;
 }
 
 function store_(data) {
@@ -62,13 +92,22 @@ function store_(data) {
   lock.waitLock(15000);
   try {
     const tab = workbook_().getSheetByName('Responses');
+    ensureDetailColumns_(tab);
     const last = tab.getLastRow();
-    if (last > 1 && tab.getRange(2,1,last-1,1).createTextFinder(data.id).matchEntireCell(true).findNext())
-      return {ok:true,id:data.id};
+    const existing = last > 1 && tab.getRange(2,1,last-1,1).createTextFinder(data.id).matchEntireCell(true).findNext();
+    if (existing) {
+      const stored = tab.getRange(existing.getRow(), HEADERS.length + 1, 1, DETAIL_KEYS.length).getValues()[0];
+      const detailsSaved = DETAIL_KEYS.every((key, index) => {
+        const expected = data.details?.[key]?.trim() ?? '';
+        return stored[index] === expected || stored[index] === detailText_(expected);
+      });
+      return {ok:true,id:data.id,detailsSaved};
+    }
     const values = KEYS.map(k => data.answers[k] == null ? '' : data.answers[k]);
-    tab.appendRow([data.id,new Date().toISOString(),new Date(data.submittedAt).toISOString(),data.language,VERSION,true].concat(values));
+    const details = DETAIL_KEYS.map(k => detailText_(data.details?.[k]));
+    tab.appendRow([data.id,new Date().toISOString(),new Date(data.submittedAt).toISOString(),data.language,VERSION,true].concat(values,details));
     SpreadsheetApp.flush();
-    return {ok:true,id:data.id};
+    return {ok:true,id:data.id,detailsSaved:true};
   } finally { lock.releaseLock(); }
 }
 
