@@ -44,7 +44,7 @@ function element(tag, value, className) {
   return node;
 }
 
-function drawMap(groups, t, number, select) {
+function drawMap(groups, t, number, select, enter, leave) {
   const left = 57, right = 570, top = 63, bottom = 310;
   const x = value => left + value / 10 * (right - left);
   const y = value => bottom - value / 10 * (bottom - top);
@@ -65,13 +65,15 @@ function drawMap(groups, t, number, select) {
     });
     dot.append(svg('title', {}, `${group.label} · ${t('genreMapLiking')} ${number(group.likingMedian, 1)}/10 · ${t('genreMapStress')} ${number(group.stressMedian, 1)}/10 · n=${number(group.n)}`));
     dot.addEventListener('click', () => select(group));
+    dot.addEventListener('pointerenter', event => {if (event.pointerType === 'mouse') enter(group);});
+    dot.addEventListener('pointerleave', event => {if (event.pointerType === 'mouse') leave(group);});
     map.append(dot);
     marks.set(group.genre, dot);
   }
   return {map, marks};
 }
 
-export function renderGenreMap(target, summary, {langIndex, number, t, snapshot, onSnapshot} = {}) {
+export function renderGenreMap(target, summary, {langIndex, number, t, snapshot, onSnapshot, preference = {tracks: {}}} = {}) {
   target.querySelector('audio')?.pause();
   target.replaceChildren();
   if (!summary) return;
@@ -83,6 +85,7 @@ export function renderGenreMap(target, summary, {langIndex, number, t, snapshot,
   const data = live ? {total: summary.total, groups: summarizeGenres(summary.genreProfile)} : snapshot;
   if (!live) {
     const alternate = element('div', '', 'genre-map-import');
+    alternate.append(element('p', t('genreMapNeedsSource'), 'meta'));
     const label = element('label', t('genreMapUpload'), 'file');
     label.htmlFor = 'genre-map-file';
     const file = element('input');
@@ -130,9 +133,54 @@ export function renderGenreMap(target, summary, {langIndex, number, t, snapshot,
   const audio = element('audio');
   audio.controls = true;
   audio.preload = 'none';
+  const playlist = element('div', '', 'genre-map-tracks');
+  playlist.setAttribute('role', 'group');
+  playlist.setAttribute('aria-label', t('genreMapAudio'));
+  const notice = element('p', '', 'meta');
+  notice.setAttribute('role', 'status');
+  const hover = element('button');
+  hover.type = 'button';
+  hover.className = 'genre-map-hover';
   const buttons = new Map();
+  const trackButtons = new Map();
+  let current, source, playback, attempt = 0;
 
-  function select(group) {
+  function play(mode) {
+    if (!source) return;
+    const request = ++attempt;
+    playback = mode;
+    notice.textContent = '';
+    audio.play().catch(error => {
+      if (request === attempt && audio.isConnected && error.name !== 'AbortError') notice.textContent = t('genreMapPlayFailed');
+    });
+  }
+
+  function stop() {
+    attempt++;
+    playback = null;
+    audio.pause();
+  }
+
+  function setTrack(number) {
+    preference.tracks[current.genre] = number;
+    for (const [id, button] of trackButtons) button.setAttribute('aria-pressed', String(id === number));
+    const url = audioGenres.has(current.genre) ? `../media/genre/${current.genre}${number === 2 ? '-2' : ''}.mp3` : '';
+    if (source === url) return;
+    stop();
+    source = url;
+    if (url) audio.src = url;
+    else audio.removeAttribute('src');
+    audio.load();
+  }
+
+  function select(group, mode) {
+    if (mode) notice.textContent = '';
+    if (current?.genre === group.genre) {
+      if (mode) play(mode);
+      return;
+    }
+    current = group;
+    preference.genre = group.genre;
     for (const [key, button] of buttons) {
       const selected = key === group.genre;
       button.setAttribute('aria-pressed', String(selected));
@@ -147,20 +195,44 @@ export function renderGenreMap(target, summary, {langIndex, number, t, snapshot,
     ]) {
       details.append(element('dt', label), element('dd', value));
     }
-    audio.pause();
     const hasAudio = audioGenres.has(group.genre);
     audio.hidden = !hasAudio;
     audioNote.hidden = !hasAudio;
+    playlist.hidden = !hasAudio;
     if (hasAudio) {
-      audio.src = `../media/genre/${group.genre}.mp3`;
       audio.setAttribute('aria-label', `${t('genreMapAudio')} · ${group.label}`);
-    } else {
-      audio.removeAttribute('src');
     }
-    audio.load();
+    setTrack(preference.tracks[group.genre] ?? 1);
+    if (mode) play(mode);
   }
 
-  const {map, marks} = drawMap(groups, t, number, select);
+  function updateHover() {
+    hover.setAttribute('aria-pressed', String(Boolean(preference.preview)));
+    hover.textContent = t(preference.preview ? 'genreMapHoverOff' : 'genreMapHoverOn');
+  }
+  hover.addEventListener('click', () => {
+    preference.preview = !preference.preview;
+    updateHover();
+    if (preference.preview) play('hover');
+    else if (playback === 'hover') stop();
+  });
+  updateHover();
+
+  for (const track of [1, 2]) {
+    const button = element('button', t('genreMapTrack', {number: number(track)}));
+    button.type = 'button';
+    button.addEventListener('click', () => {
+      setTrack(track);
+      play('manual');
+    });
+    trackButtons.set(track, button);
+    playlist.append(button);
+  }
+  const {map, marks} = drawMap(groups, t, number, group => select(group, 'manual'), group => {
+    if (preference.preview) select(group, 'hover');
+  }, group => {
+    if (playback === 'hover' && current.genre === group.genre) stop();
+  });
   for (const group of groups) {
     const marker = element('span', '', 'genre-map-swatch');
     marker.style.backgroundColor = group.color;
@@ -168,13 +240,14 @@ export function renderGenreMap(target, summary, {langIndex, number, t, snapshot,
     const button = element('button');
     button.type = 'button';
     button.append(marker, element('span', `${group.label} · n=${number(group.n)}`));
-    button.addEventListener('click', () => select(group));
+    button.addEventListener('click', () => select(group, 'manual'));
     picker.append(button);
     buttons.set(group.genre, button);
   }
-  plot.append(element('p', t('genreMapStressAxis'), 'genre-map-axis'), map, element('p', t('genreMapLikingAxis'), 'genre-map-axis'));
-  panel.append(element('p', t('genreMapChoose'), 'genre-map-prompt'), picker, selectedTitle, details, audioNote, audio);
+  plot.append(element('p', t('genreMapStressAxis'), 'genre-map-axis'), map, element('p', t('genreMapLikingAxis'), 'genre-map-axis'),
+    hover, element('p', t('genreMapHoverHint'), 'meta'));
+  panel.append(element('p', t('genreMapChoose'), 'genre-map-prompt'), picker, selectedTitle, details, audioNote, playlist, audio, notice);
   layout.append(plot, panel);
   target.append(layout, element('p', t('genreMapNote', {minimum: smallGroupSize}), 'meta'));
-  select(groups[0]);
+  select(groups.find(group => group.genre === preference.genre) ?? groups[0]);
 }

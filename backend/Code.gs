@@ -42,7 +42,7 @@ function setup() {
 function json_(value) {
   return ContentService.createTextOutput(JSON.stringify(value)).setMimeType(ContentService.MimeType.JSON);
 }
-function doGet() { return json_({service:VERSION, detailsSupported:true, ageRange:LIMITS.age, ageGenreAvailable:true, pairedStressAvailable:true}); }
+function doGet() { return json_({service:VERSION, detailsSupported:true, ageRange:LIMITS.age, ageGenreAvailable:true, pairedStressAvailable:true, genreProfileAvailable:true}); }
 function validate_(data, maxAge = LIMITS.age[1]) {
   if (!data || data.schema !== VERSION || data.consent !== true ||
       !['vi','ko','en','zh','mn'].includes(data.language) ||

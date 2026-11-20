@@ -79,6 +79,10 @@
 .genre-map-plot svg .axis-text{font-size:16px}
 .genre-map-axis{font-size:13px;font-weight:650;margin:4px 0 0;color:#4a4158}
 .genre-map-axis:last-child{text-align:center;margin:0 0 4px}
+.genre-map-hover{display:none;margin:8px 0 0;font-size:13px;font-weight:650}
+@media (any-hover:hover){.genre-map-hover{display:inline-block}}
+.genre-map-tracks{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.genre-map-tracks button{font-size:12px;padding:5px 9px}
 .map-axes-bg{fill:#faf7fe}
 .genre-mark{cursor:pointer;fill-opacity:.73;stroke:#392f49;stroke-width:1.5}
 .sparse-genre{stroke-dasharray:3 2}

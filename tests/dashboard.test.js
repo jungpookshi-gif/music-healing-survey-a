@@ -152,17 +152,21 @@ test('collector preserves old rows and stores optional details once, outside agg
 
 test('administrator dashboard requires a successful server password check and locks on sign-out', async t => {
  const elements = new Map();
+ let refresh, completeSource=false, badConnection=false;
+ const token=Symbol('refresh');
+ const setTimer=globalThis.setTimeout, clearTimer=globalThis.clearTimeout;
  const makeElement = (tag) => ({
    tag,
-   hidden:false, inert:false, value:'', textContent:'', style:{}, children:[], attributes:{},
+   hidden:false, inert:false, value:'', textContent:'', style:{}, children:[], attributes:{}, events:{}, paused:true,
    append(...children){ this.children.push(...children); },
    replaceChildren(...children){ this.children=children; },
    setAttribute(name,value){ this.attributes[name]=value; }, focus(){ this.focused=true; },
    querySelector(selector){ return this.children.find(child=>child.tag===selector) ??
      this.children.map(child=>child.querySelector(selector)).find(Boolean); },
-   addEventListener(){},
+   addEventListener(name,handler){this.events[name]=handler;},
    classList:{toggle(){}},
-   pause(){}, load(){}
+   pause(){this.paused=true;}, load(){},
+   async play(){this.paused=false;}
  });
  const element = id => {
    if(!elements.has(id)) elements.set(id,makeElement());
@@ -174,11 +178,21 @@ test('administrator dashboard requires a successful server password check and lo
    location:{href:'https://example.test/admin/'},
    history:{replaceState(_state,_title,url){environment.location.href=url.href;}},
    window:{SURVEY_CONFIG:{endpoint:'https://script.google.com/macros/s/fixture/exec'},addEventListener(){}},
+   setTimeout(callback,delay) {
+     if(delay!==60000) return setTimer(callback,delay);
+     refresh=callback;
+     return token;
+   },
+   clearTimeout(id) {
+     if(id===token) refresh=null;
+     else clearTimer(id);
+   },
    fetch:async (_url,{body}) => {
+     if(badConnection) throw Error('offline');
      assert.equal(body.get('action'),'summary');
      const valid = body.get('key')==='test-password';
      const result = valid ? fromCsv(listeningCsv).summary : {ok:false,error:'access'};
-     if(valid) for (const key of ['ageGenre','minutesStress','genreStress','genreProfile']) delete result[key];
+     if(valid && !completeSource) for (const key of ['ageGenre','minutesStress','genreStress','genreProfile']) delete result[key];
      return {ok:true,json:async()=>result};
    }
  };
@@ -225,7 +239,26 @@ test('administrator dashboard requires a successful server password check and lo
  await element('csv').onchange({target:{files:[{text:async()=>listeningCsv}]}});
  assert.equal(charts.children.length,6);
  assert.ok(element('genre-map').querySelector('svg'));
- assert.equal(element('genre-map').querySelector('audio').src,'../media/genre/pop.mp3');
+ const map=element('genre-map'), audio=map.querySelector('audio');
+ assert.equal(audio.src,'../media/genre/pop.mp3');
+ const layout=map.children.find(child=>child.className==='genre-map-layout');
+ const plot=layout.children[0], panel=layout.children[1];
+ const dots=plot.querySelector('svg').children.filter(child=>child.tag==='circle');
+ const mouse={pointerType:'mouse'};
+ dots[1].events.pointerenter(mouse);
+ assert.equal(audio.paused,true);
+ plot.children.find(child=>child.className==='genre-map-hover').events.click();
+ dots[1].events.pointerenter(mouse);
+ assert.equal(audio.src,'../media/genre/ballad.mp3');
+ assert.equal(audio.paused,false);
+ dots[1].events.pointerleave(mouse);
+ assert.equal(audio.paused,true);
+ panel.children.find(child=>child.className==='genre-map-tracks').children[1].events.click();
+ assert.equal(audio.src,'../media/genre/ballad-2.mp3');
+ dots[0].events.click();
+ assert.equal(audio.src,'../media/genre/pop.mp3');
+ dots[1].events.click();
+ assert.equal(audio.src,'../media/genre/ballad-2.mp3');
  assert.equal(charts.children[0].children[0].textContent,'Age group × genre listened to when stressed');
  const finding = card => card.children.find(child=>child.className==='insight').textContent;
  assert.match(finding(charts.children[0]),/All age groups with data have fewer than 5 responses/);
@@ -268,8 +301,23 @@ test('administrator dashboard requires a successful server password check and lo
  assert.equal(document.documentElement.lang,'mn');
  assert.equal(element('charts-title').textContent,'Шинжилгээний диаграммууд');
  assert.equal(charts.children.length,6);
+ languageButtons[2].onclick();
+ completeSource=true;
+ await refresh();
+ assert.equal(map.querySelector('input'),undefined);
+ assert.equal(element('clear').hidden,false);
+ element('clear').onclick();
+ badConnection=true;
+ await refresh();
+ assert.match(element('sync-status').textContent,/retry automatically/);
+ badConnection=false;
+ await refresh();
+ assert.ok(map.querySelector('svg'));
+ assert.equal(map.querySelector('input'),undefined);
+ assert.match(element('sync-status').textContent,/refreshes every minute/);
  assert.equal(element('key').value,'');
  element('sign-out').onclick();
+ assert.equal(refresh,null);
  assert.equal(element('dashboard').hidden,true);
  assert.equal(element('kpis').children.length,0);
  assert.equal(charts.children.length,0);
