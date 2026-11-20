@@ -4,6 +4,7 @@ import {fields} from '../schema.js';
 import {validAnswer,VERSION} from '../logic.js';
 import {fromCsv,mean,parseCsv} from '../admin/analysis.js';
 import {distributionStats,durationSensitivity,scatterStats} from '../admin/relationship-analysis.js';
+import {readGenreSnapshot,summarizeGenres} from '../admin/genre-map.js';
 import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
 
@@ -52,9 +53,22 @@ test('joint chart counts pair answers within the same response in both data sour
  assert.deepEqual(frontend.ageGenre,{18:{pop:1},25:{ballad:1},65:{pop:1}});
  assert.deepEqual(frontend.minutesStress,{0:{0:1},15:{8:1},30:{6:1}});
  assert.deepEqual(frontend.genreStress,{pop:{0:1,6:1},ballad:{8:1}});
+ assert.deepEqual(summarizeGenres(frontend.genreProfile),[
+   {genre:'pop',n:2,likingMedian:4,stressMedian:3},
+   {genre:'ballad',n:1,likingMedian:5,stressMedian:8}
+ ]);
  assert.deepEqual(JSON.parse(JSON.stringify(env.summarize_('fixture-only'))),frontend);
 });
 
+test('map snapshots accept equal positions and keep group sizes and score bounds valid', () => {
+ const group = {genre:'pop',n:2,likingMedian:7.5,stressMedian:0};
+ const snapshot = {schema:'music-healing-survey-a/genre-map-v1',date:'2026-11-21',total:4,
+   groups:[group,{...group,genre:'ballad'}]};
+ assert.deepEqual(readGenreSnapshot(JSON.stringify(snapshot)).groups,snapshot.groups);
+ for (const invalid of [{...group}, {...group,genre:'other',n:3}, {...group,genre:'none'}, {...group,genre:'other',stressMedian:11}]) {
+   assert.throws(()=>readGenreSnapshot(JSON.stringify({...snapshot,groups:[group,invalid]})),/snapshot/);
+ }
+});
 test('joint chart statistics retain repeated coordinates, rank ties, and boxplot outliers', () => {
  const paired=scatterStats({0:{0:2},15:{4:1},30:{10:2}});
  assert.equal(paired.n,5);
@@ -143,7 +157,12 @@ test('administrator dashboard requires a successful server password check and lo
    hidden:false, inert:false, value:'', textContent:'', style:{}, children:[], attributes:{},
    append(...children){ this.children.push(...children); },
    replaceChildren(...children){ this.children=children; },
-   setAttribute(name,value){ this.attributes[name]=value; }, focus(){ this.focused=true; }
+   setAttribute(name,value){ this.attributes[name]=value; }, focus(){ this.focused=true; },
+   querySelector(selector){ return this.children.find(child=>child.tag===selector) ??
+     this.children.map(child=>child.querySelector(selector)).find(Boolean); },
+   addEventListener(){},
+   classList:{toggle(){}},
+   pause(){}, load(){}
  });
  const element = id => {
    if(!elements.has(id)) elements.set(id,makeElement());
@@ -159,7 +178,7 @@ test('administrator dashboard requires a successful server password check and lo
      assert.equal(body.get('action'),'summary');
      const valid = body.get('key')==='test-password';
      const result = valid ? fromCsv(listeningCsv).summary : {ok:false,error:'access'};
-     if(valid) for (const key of ['ageGenre','minutesStress','genreStress']) delete result[key];
+     if(valid) for (const key of ['ageGenre','minutesStress','genreStress','genreProfile']) delete result[key];
      return {ok:true,json:async()=>result};
    }
  };
@@ -195,6 +214,8 @@ test('administrator dashboard requires a successful server password check and lo
  assert.equal(element('kpis').children.length,3);
  const charts=element('charts');
  assert.equal(charts.children.length,6);
+ assert.equal(element('genre-map').querySelector('svg'),undefined);
+ assert.equal(element('genre-map').querySelector('input').accept,'.json,application/json');
  assert.equal(charts.children[0].children[0].textContent,'Genres listened to when stressed');
  const plotCard = card => card.children.find(child=>child.className==='chart-frame');
  assert.ok(charts.children.slice(0,4).every(card=>plotCard(card)?.children[0].tag==='svg'));
@@ -203,6 +224,8 @@ test('administrator dashboard requires a successful server password check and lo
  assert.equal(element('table-body').children.length,fields.length);
  await element('csv').onchange({target:{files:[{text:async()=>listeningCsv}]}});
  assert.equal(charts.children.length,6);
+ assert.ok(element('genre-map').querySelector('svg'));
+ assert.equal(element('genre-map').querySelector('audio').src,'../media/genre/pop.mp3');
  assert.equal(charts.children[0].children[0].textContent,'Age group × genre listened to when stressed');
  const finding = card => card.children.find(child=>child.className==='insight').textContent;
  assert.match(finding(charts.children[0]),/All age groups with data have fewer than 5 responses/);
@@ -250,6 +273,7 @@ test('administrator dashboard requires a successful server password check and lo
  assert.equal(element('dashboard').hidden,true);
  assert.equal(element('kpis').children.length,0);
  assert.equal(charts.children.length,0);
+ assert.equal(element('genre-map').children.length,0);
  assert.equal(element('study-scope').textContent,'');
  assert.equal(element('table-body').children.length,0);
 });

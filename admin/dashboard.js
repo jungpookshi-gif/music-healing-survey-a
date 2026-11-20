@@ -1,12 +1,14 @@
 import {fields} from '../schema.js?v=4';
 import {initialLanguage, languages} from '../locale.js';
-import {ageBands,fromCsv,mean,barsFor} from './analysis.js?v=6';
-import {words,shortNames} from './labels.js?v=10';
+import {ageBands,fromCsv,mean,barsFor} from './analysis.js?v=7';
+import {words,shortNames} from './labels.js?v=11';
 import {renderCharts} from './charts.js?v=4';
+import {renderGenreMap} from './genre-map.js?v=1';
 
 const query=new URL(location.href);
 let lang=initialLanguage(query.href);
 let onlineSummary=null, summary=null, source='', excluded=0, status='', sequence=0;
+let genreSnapshot=null;
 const configured=window.SURVEY_CONFIG?.endpoint || '';
 const endpoint=/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(configured)?configured:'';
 const el=id=>document.getElementById(id);
@@ -69,6 +71,7 @@ function render() {
   document.querySelectorAll('[data-lang]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.lang===lang)));
   if (!signedIn) {
     for (const id of ['kpis','charts','table-head','table-body']) el(id).replaceChildren();
+    renderGenreMap(el('genre-map'),null);
     el('study-scope').textContent='';
     return;
   }
@@ -96,6 +99,10 @@ function render() {
   const young=validAges.reduce((sum,[age,n])=>Number(age)<=34 ? sum+n : sum,0);
   el('study-scope').textContent=ageTotal
     ? `${t('studyScope')} ${t('ageProfile',{young:number(young),total:number(ageTotal),share:number(young/ageTotal*100,1)})}` : t('studyScope');
+  renderGenreMap(el('genre-map'),summary,{langIndex,number,t,snapshot:genreSnapshot,onSnapshot:snapshot=>{
+    genreSnapshot=snapshot;
+    render();
+  }});
   renderCharts(el('charts'),summary,{langIndex,reportLang:lang==='ko'?'ko':'vi',number,t});
   renderTable(langIndex);
 }
@@ -107,6 +114,7 @@ function setOnlineView() {
 function lock() {
   sequence++;
   onlineSummary=null;
+  genreSnapshot=null;
   setOnlineView();
   el('key').value='';
   render();

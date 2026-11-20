@@ -126,6 +126,7 @@ function summarize_(key) {
   const ageGenre = {};
   const minutesStress = {};
   const genreStress = {};
+  const genreProfile = {};
   for (const row of rows) {
     for (let j=0;j<KEYS.length;j++) {
       const value = row[6+j], column = counts[KEYS[j]];
@@ -136,7 +137,7 @@ function summarize_(key) {
       const group = stressByFrequency[freq] || {n:0,sum:0};
       group.n++; group.sum+=stress; stressByFrequency[freq]=group;
     }
-    const age = row[6], minutes = row[10], genre = row[12];
+    const age = row[6], minutes = row[10], genre = row[12], liking = row[14];
     const hasGenre = genre !== 'none' && CHOICES.stress_genre.includes(genre);
     if (Number.isInteger(stress) && stress >= 0 && stress <= 10) {
       if (Number.isInteger(minutes) && minutes >= 0 && minutes <= 1440) {
@@ -146,6 +147,11 @@ function summarize_(key) {
       if (hasGenre) {
         const scores = genreStress[genre] || (genreStress[genre] = {});
         scores[stress] = (scores[stress] || 0) + 1;
+        if (Number.isInteger(liking) && liking >= 0 && liking <= 10) {
+          const profile = genreProfile[genre] || (genreProfile[genre] = {liking:{},stress:{}});
+          profile.liking[liking] = (profile.liking[liking] || 0) + 1;
+          profile.stress[stress] = (profile.stress[stress] || 0) + 1;
+        }
       }
     }
     if (Number.isInteger(age) && hasGenre) {
@@ -156,7 +162,7 @@ function summarize_(key) {
       }
     }
   }
-  return {ok:true,total:rows.length,counts:counts,stressByFrequency:stressByFrequency,ageGenre:ageGenre,minutesStress:minutesStress,genreStress:genreStress};
+  return {ok:true,total:rows.length,counts:counts,stressByFrequency:stressByFrequency,ageGenre:ageGenre,minutesStress:minutesStress,genreStress:genreStress,genreProfile:genreProfile};
 }
 function doPost(e) {
   try {
